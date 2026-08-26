@@ -44,7 +44,7 @@ const userSchema = new mongoose.Schema(
     },
     activePackage: {
       type: String,
-      enum: ['NONE', 'FASHIONISTA_PRO', 'CYBER_VIP', 'XIV_GOD'],
+      enum: ['NONE', 'PLUS', 'VIP', 'PREMIUM', 'FASHIONISTA_PRO', 'CYBER_VIP', 'XIV_GOD'],
       default: 'NONE',
     },
     membershipTier: {

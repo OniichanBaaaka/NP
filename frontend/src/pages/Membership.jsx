@@ -205,7 +205,7 @@ export default function Membership() {
       const orderPayload = {
         items: [
           {
-            productId: 9990 + (plan.id === 'PLUS' ? 1 : plan.id === 'VIP' ? 2 : 3),
+            productId: null,
             name: `GÓI HỘI VIÊN ${plan.name} (${plan.period})`,
             price: plan.price,
             quantity: 1,
@@ -221,17 +221,20 @@ export default function Membership() {
           address: 'Kích hoạt gói trực tuyến (Digital Membership Activation)',
           note: `Đăng ký gói hội viên ${plan.name}`,
         },
-        paymentMethod: 'vietqr',
+        paymentMethod: 'VIETQR',
       };
 
       const res = await orderAPI.checkout(orderPayload);
-      if (res.data.success) {
+      if (res.data && res.data.success) {
         setCreatedOrder(res.data.order);
         setShowPackageQR(true);
+        if (refreshUserData) {
+          await refreshUserData();
+        }
       }
     } catch (err) {
       console.error('Failed to create subscription order:', err);
-      alert('Không thể tạo đơn đăng ký gói. Vui lòng thử lại!');
+      alert(err.response?.data?.message || 'Không thể tạo đơn đăng ký gói. Vui lòng thử lại!');
     } finally {
       setIsProcessing(false);
     }
