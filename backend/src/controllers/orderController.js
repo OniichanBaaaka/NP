@@ -118,6 +118,51 @@ async function updateStatus(req, res) {
   }
 }
 
+/**
+ * Người mua / Người nhận xác nhận đã nhận được hàng (Chuyển sang DELIVERED)
+ */
+async function confirmDelivery(req, res) {
+  try {
+    const { id } = req.params;
+    let order = null;
+
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      order = await Order.findById(id);
+    }
+    if (!order) {
+      order = await Order.findOne({ orderCode: id.toUpperCase().trim() });
+    }
+
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy đơn hàng' });
+    }
+
+    if (order.orderStatus === 'DELIVERED') {
+      return res.json({
+        success: true,
+        message: 'Đơn hàng này đã được xác nhận đã nhận trước đó.',
+        order: orderService.formatOrderRecord(order),
+      });
+    }
+
+    const updaterName = req.user ? `${req.user.name} (Người nhận)` : `${order.customerName} (Người nhận)`;
+    const updatedOrder = await orderService.updateOrderStatus(
+      order._id,
+      'DELIVERED',
+      updaterName,
+      'Người nhận xác nhận đã nhận kiện hàng đầy đủ và nguyên vẹn.'
+    );
+
+    return res.json({
+      success: true,
+      message: 'Xác nhận đã nhận hàng thành công! Hãy gửi đánh giá để nhận quà ưu đãi nhé.',
+      order: updatedOrder,
+    });
+  } catch (error) {
+    return res.status(400).json({ success: false, message: error.message });
+  }
+}
+
 async function getDashboardKPIs(req, res) {
   try {
     // Tổng doanh thu từ các đơn không bị CANCELLED
@@ -168,5 +213,6 @@ module.exports = {
   getAllOrders,
   getOrderByCode,
   updateStatus,
+  confirmDelivery,
   getDashboardKPIs,
 };

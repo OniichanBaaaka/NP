@@ -10,6 +10,10 @@ router.get('/track/:code', orderController.getOrderByCode);
 router.post('/checkout', optionalAuth, orderController.createOrder);
 router.post('/', optionalAuth, orderController.createOrder);
 
+// Người nhận xác nhận đã nhận hàng
+router.post('/:id/confirm-delivery', optionalAuth, orderController.confirmDelivery);
+router.patch('/:id/confirm-delivery', optionalAuth, orderController.confirmDelivery);
+
 // Customer my orders
 router.get('/my-orders', authenticate, orderController.getMyOrders);
 

@@ -172,6 +172,30 @@ export default function Profile() {
     }
   };
 
+  const [confirmingOrderId, setConfirmingOrderId] = useState(null);
+  const [confirmSuccessMsg, setConfirmSuccessMsg] = useState('');
+
+  const handleConfirmDelivery = async (orderId) => {
+    if (!window.confirm('Bạn xác nhận đã nhận được kiện hàng này đầy đủ và nguyên vẹn?')) {
+      return;
+    }
+    setConfirmingOrderId(orderId);
+    setConfirmSuccessMsg('');
+    try {
+      const res = await orderAPI.confirmDelivery(orderId);
+      if (res.data && res.data.success) {
+        setConfirmSuccessMsg('🎉 ' + res.data.message);
+        await loadOrders();
+        if (refreshUserData) await refreshUserData();
+        setTimeout(() => setConfirmSuccessMsg(''), 5000);
+      }
+    } catch (e) {
+      alert(e.response?.data?.message || 'Không thể xác nhận nhận hàng');
+    } finally {
+      setConfirmingOrderId(null);
+    }
+  };
+
   const handleCopyVoucher = (code) => {
     navigator.clipboard.writeText(code);
     setCopiedCode(code);
@@ -509,6 +533,13 @@ export default function Profile() {
             ))}
           </div>
 
+          {confirmSuccessMsg && (
+            <div className="p-4 rounded-2xl bg-emerald-950/60 border border-emerald-500/50 text-emerald-300 text-xs font-bold flex items-center gap-2 shadow-lg shadow-emerald-500/10 animate-fade-in">
+              <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
+              <span>{confirmSuccessMsg}</span>
+            </div>
+          )}
+
           {ordersLoading ? (
             <div className="text-center py-16">
               <RefreshCw className="w-8 h-8 text-pink-500 animate-spin mx-auto mb-3" />
@@ -550,7 +581,20 @@ export default function Profile() {
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {order.status !== 'DELIVERED' && order.status !== 'CANCELLED' && (
+                        <button
+                          onClick={() => handleConfirmDelivery(order._id || order.id || order.orderCode)}
+                          disabled={confirmingOrderId === (order._id || order.id || order.orderCode)}
+                          className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-extrabold text-xs flex items-center gap-1.5 shadow-lg shadow-emerald-500/20 transition-all cursor-pointer disabled:opacity-50"
+                        >
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          {confirmingOrderId === (order._id || order.id || order.orderCode)
+                            ? 'Đang xác nhận...'
+                            : 'Đã nhận được hàng'}
+                        </button>
+                      )}
+
                       <Link
                         to={`/order-tracking?code=${order.orderCode}`}
                         className="px-3.5 py-1.5 rounded-xl bg-gray-900 hover:bg-gray-800 border border-gray-700 text-gray-300 font-bold text-xs flex items-center gap-1.5 transition-colors"

@@ -50,6 +50,7 @@ export const orderAPI = {
   getAll: (params) => api.get('/orders', { params }),
   getTracking: (code) => api.get(`/orders/track/${code}`),
   updateStatus: (id, data) => api.patch(`/orders/${id}/status`, data),
+  confirmDelivery: (id) => api.post(`/orders/${id}/confirm-delivery`),
   getKPIs: () => api.get('/orders/kpi/dashboard'),
 };
 

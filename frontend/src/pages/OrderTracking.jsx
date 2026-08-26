@@ -56,10 +56,32 @@ export default function OrderTracking() {
       }
     } catch (err) {
       console.error(err);
-      setError(err.response?.data?.message || 'Không tìm thấy đơn hàng với mã này.');
       setOrder(null);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const [confirming, setConfirming] = useState(false);
+  const [confirmSuccess, setConfirmSuccess] = useState('');
+
+  const handleConfirmReceived = async () => {
+    if (!order) return;
+    if (!window.confirm('Bạn xác nhận đã nhận được kiện hàng này đầy đủ và nguyên vẹn?')) return;
+    setConfirming(true);
+    setConfirmSuccess('');
+    try {
+      const res = await orderAPI.confirmDelivery(order.orderCode || order.id);
+      if (res.data && res.data.success) {
+        setConfirmSuccess('🎉 ' + res.data.message);
+        await fetchOrder(order.orderCode);
+        if (refreshUserData) refreshUserData();
+        setTimeout(() => setConfirmSuccess(''), 5000);
+      }
+    } catch (e) {
+      alert(e.response?.data?.message || 'Không thể xác nhận nhận hàng');
+    } finally {
+      setConfirming(false);
     }
   };
 
@@ -179,6 +201,13 @@ export default function OrderTracking() {
         </button>
       </form>
 
+      {/* Success display */}
+      {confirmSuccess && (
+        <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border-2 border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-300 text-xs flex items-center justify-center gap-2 shadow-md font-bold animate-in fade-in">
+          <CheckCircle className="w-4 h-4 text-emerald-600 flex-shrink-0" /> {confirmSuccess}
+        </div>
+      )}
+
       {/* Error display */}
       {error && (
         <div className="p-4 rounded-2xl bg-rose-50 dark:bg-red-950/60 border-2 border-rose-300 dark:border-red-800 text-rose-800 dark:text-red-300 text-xs flex items-center justify-center gap-2 shadow-md font-bold">
@@ -228,8 +257,18 @@ export default function OrderTracking() {
                 <Calendar className="w-4 h-4 text-pink-500" /> Tạo lúc: {new Date(order.createdAt).toLocaleString('vi-VN')}
               </span>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-wrap">
               {getStatusBadge(order.orderStatus)}
+              {order.orderStatus !== 'completed' && order.orderStatus !== 'cancelled' && (
+                <button
+                  onClick={handleConfirmReceived}
+                  disabled={confirming}
+                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-black text-xs flex items-center gap-1.5 shadow-md shadow-emerald-500/25 transition-all cursor-pointer disabled:opacity-50"
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  {confirming ? 'Đang xác nhận...' : 'Đã nhận được hàng'}
+                </button>
+              )}
               {order.paymentMethod === 'vietqr' && order.orderStatus === 'pending' && (
                 <button
                   onClick={() => setShowQRModal(true)}
