@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>XIV STUDIO | High-End Streetwear & AI Fashion</title>
+    <meta name="description" content="XIV STUDIO - Thương hiệu thời trang Streetwear cao cấp tích hợp trợ lý ảo AI và thanh toán VietQR Napas 247." />
+    
+    <!-- Script khởi tạo Theme Melody Sáng ngay lập tức -->
+    <script>
+      (function() {
+        var savedTheme = localStorage.getItem('xiv_theme');
+        if (savedTheme === 'dark') {
+          document.documentElement.className = 'dark';
+          document.documentElement.setAttribute('data-theme', 'dark');
+        } else {
+          document.documentElement.className = 'light';
+          document.documentElement.setAttribute('data-theme', 'light');
+        }
+      })();
+    </script>
+
+    <!-- Google Fonts: Be Vietnam Pro (Tiếng Việt hoàn hảo) + Outfit + Space Grotesk -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&family=Outfit:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  </head>
+  <body class="antialiased transition-colors duration-300">
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

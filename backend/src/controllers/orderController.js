@@ -1,0 +1,172 @@
+const mongoose = require('mongoose');
+const { Order, Product, Category } = require('../models');
+const orderService = require('../services/orderService');
+
+async function createOrder(req, res) {
+  try {
+    const userId = req.user ? req.user.id : null;
+    const { customerInfo, items, paymentMethod, voucherCode, discountAmount, note } = req.body;
+
+    const order = await orderService.createOrder({
+      userId,
+      customerInfo,
+      items,
+      paymentMethod: paymentMethod || 'COD',
+      voucherCode,
+      discountAmount,
+      note,
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: 'Đặt hàng thành công',
+      order,
+    });
+  } catch (error) {
+    return res.status(400).json({ success: false, message: error.message });
+  }
+}
+
+async function getMyOrders(req, res) {
+  try {
+    const userId = req.user.id;
+    const orders = await Order.find({ userId }).sort({ createdAt: -1 });
+    const formatted = orders.map(orderService.formatOrderRecord);
+
+    return res.json({ success: true, count: formatted.length, orders: formatted });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+}
+
+async function getAllOrders(req, res) {
+  try {
+    const { status, search, limit } = req.query;
+
+    const filter = {};
+    if (status) {
+      filter.orderStatus = status.toUpperCase();
+    }
+
+    if (search && search.trim()) {
+      const term = search.trim();
+      const regex = new RegExp(term, 'i');
+      filter.$or = [
+        { orderCode: regex },
+        { customerName: regex },
+        { customerPhone: regex },
+        { customerEmail: regex },
+      ];
+    }
+
+    let query = Order.find(filter).sort({ createdAt: -1 });
+
+    if (limit && !isNaN(parseInt(limit, 10))) {
+      query = query.limit(parseInt(limit, 10));
+    }
+
+    const orders = await query.exec();
+    const formatted = orders.map(orderService.formatOrderRecord);
+
+    return res.json({ success: true, count: formatted.length, orders: formatted });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+}
+
+async function getOrderByCode(req, res) {
+  try {
+    const { code } = req.params;
+    let order = await Order.findOne({ orderCode: code.toUpperCase().trim() });
+
+    if (!order && mongoose.Types.ObjectId.isValid(code)) {
+      order = await Order.findById(code);
+    }
+
+    if (!order) {
+      return res.status(404).json({ success: false, message: `Không tìm thấy đơn hàng với mã ${code}` });
+    }
+
+    return res.json({
+      success: true,
+      order: orderService.formatOrderRecord(order),
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+}
+
+async function updateStatus(req, res) {
+  try {
+    const { id } = req.params;
+    const { status, note } = req.body;
+
+    if (!status) {
+      return res.status(400).json({ success: false, message: 'Vui lòng cung cấp trạng thái mới' });
+    }
+
+    const updater = req.user ? `${req.user.name} (${req.user.role})` : 'System';
+    const updatedOrder = await orderService.updateOrderStatus(id, status, updater, note);
+
+    return res.json({
+      success: true,
+      message: `Cập nhật đơn hàng sang trạng thái "${status}" thành công`,
+      order: updatedOrder,
+    });
+  } catch (error) {
+    return res.status(400).json({ success: false, message: error.message });
+  }
+}
+
+async function getDashboardKPIs(req, res) {
+  try {
+    // Tổng doanh thu từ các đơn không bị CANCELLED
+    const revenueAgg = await Order.aggregate([
+      { $match: { orderStatus: { $ne: 'CANCELLED' } } },
+      { $group: { _id: null, total: { $sum: '$finalAmount' } } },
+    ]);
+    const totalRevenue = revenueAgg.length > 0 ? revenueAgg[0].total : 0;
+
+    const totalOrders = await Order.countDocuments();
+    const completedOrders = await Order.countDocuments({ orderStatus: 'DELIVERED' });
+    const pendingOrders = await Order.countDocuments({ orderStatus: 'PENDING' });
+
+    const lowStockCount = await Product.countDocuments({ stock: { $lte: 10 } });
+    const lowStockProducts = await Product.find({ stock: { $lte: 10 } })
+      .select('name sku stock price category')
+      .sort({ stock: 1 });
+
+    const topSellingProducts = await Product.find()
+      .select('name sku price stock soldCount images')
+      .sort({ soldCount: -1 })
+      .limit(5);
+
+    const recentOrdersRaw = await Order.find().sort({ createdAt: -1 }).limit(5);
+    const recentOrders = recentOrdersRaw.map(orderService.formatOrderRecord);
+
+    return res.json({
+      success: true,
+      kpis: {
+        totalRevenue,
+        totalOrders,
+        completedOrders,
+        pendingOrders,
+        lowStockCount,
+        lowStockProducts,
+        topSellingProducts,
+        recentOrders,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+}
+
+module.exports = {
+  createOrder,
+  getMyOrders,
+  getAllOrders,
+  getOrderByCode,
+  updateStatus,
+  getDashboardKPIs,
+};
