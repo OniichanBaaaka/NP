@@ -128,11 +128,20 @@ async function createOrder({ userId, customerInfo, items, paymentMethod, voucher
     };
   }
 
+  const isSubscriptionOrder = processedItems.every(
+    (it) => it.type === 'subscription' || !it.productId || it.name?.includes('GÓI HỘI VIÊN')
+  );
+
+  const initStatus = isSubscriptionOrder ? 'DELIVERED' : 'PENDING';
+  const initPaymentStatus = isSubscriptionOrder ? 'PAID' : 'PENDING';
+
   const initialTimeline = [
     {
-      status: 'PENDING',
+      status: initStatus,
       time: new Date(),
-      description: `Đơn hàng được khởi tạo qua phương thức thanh toán ${pMethod}`,
+      description: isSubscriptionOrder
+        ? `Đăng ký Gói Hội Viên thành công - Đã tự động kích hoạt quyền lợi gói vào tài khoản`
+        : `Đơn hàng được khởi tạo qua phương thức thanh toán ${pMethod}`,
     },
   ];
 
@@ -154,11 +163,42 @@ async function createOrder({ userId, customerInfo, items, paymentMethod, voucher
     finalAmount,
     voucherCode: voucherCode || null,
     paymentMethod: pMethod,
-    paymentStatus: 'PENDING',
-    orderStatus: 'PENDING',
+    paymentStatus: initPaymentStatus,
+    orderStatus: initStatus,
     note: note || customerInfo.note || '',
     timeline: initialTimeline,
   });
+
+  // Tự động kích hoạt quyền lợi gói hội viên vào DB cho tài khoản người dùng ngay lập tức
+  if (isSubscriptionOrder) {
+    const subItem = processedItems.find(
+      (it) => it.type === 'subscription' || !it.productId || it.name?.includes('GÓI HỘI VIÊN')
+    );
+    const pkg = subItem ? (subItem.size || 'PLUS').toUpperCase() : 'PLUS';
+
+    let targetUser = null;
+    if (validUserId) {
+      targetUser = await User.findById(validUserId);
+    } else if (customerInfo.email) {
+      targetUser = await User.findOne({ email: customerInfo.email.trim().toLowerCase() });
+    }
+
+    if (targetUser) {
+      targetUser.activePackage = pkg;
+      targetUser.totalSpent += finalAmount;
+
+      if (pkg === 'VIP' || pkg === 'PREMIUM') {
+        if (targetUser.membershipTier === 'MEMBER' || targetUser.membershipTier === 'SILVER') {
+          targetUser.membershipTier = 'GOLD';
+        }
+      }
+      if (targetUser.totalSpent >= 30000000) targetUser.membershipTier = 'DIAMOND';
+      else if (targetUser.totalSpent >= 15000000 && targetUser.membershipTier !== 'DIAMOND') targetUser.membershipTier = 'GOLD';
+      else if (targetUser.totalSpent >= 5000000 && targetUser.membershipTier === 'MEMBER') targetUser.membershipTier = 'SILVER';
+
+      await targetUser.save();
+    }
+  }
 
   // Xóa giỏ hàng sau khi đặt thành công
   if (validUserId) {
@@ -168,6 +208,9 @@ async function createOrder({ userId, customerInfo, items, paymentMethod, voucher
   const doc = newOrder.toJSON();
   return {
     ...doc,
+    id: String(doc._id),
+    status: initStatus,
+    orderStatus: initStatus,
     vietqrData,
     customerInfo: {
       name: doc.customerName,

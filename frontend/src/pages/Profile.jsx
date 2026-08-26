@@ -628,6 +628,9 @@ export default function Profile() {
               {filteredOrders.map((order) => {
                 const isOrdDelivered = isDelivered(order.status) || isDelivered(order.orderStatus);
                 const isOrdCancelled = String(order.status || order.orderStatus || '').toUpperCase() === 'CANCELLED';
+                const isOrderSubscription = order.items?.some(
+                  (it) => it.type === 'subscription' || !it.productId || it.name?.includes('GÓI HỘI VIÊN')
+                );
 
                 return (
                   <div
@@ -640,7 +643,13 @@ export default function Profile() {
                           <span className="font-mono font-black text-sm text-pink-600 dark:text-cyan-400">
                             #{order.orderCode}
                           </span>
-                          {getStatusBadge(order.status || order.orderStatus)}
+                          {isOrderSubscription ? (
+                            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-black bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-500/40 shadow-sm">
+                              <Crown className="w-3.5 h-3.5 text-amber-500" /> GÓI HỘI VIÊN (ĐÃ KÍCH HOẠT TỰ ĐỘNG)
+                            </span>
+                          ) : (
+                            getStatusBadge(order.status || order.orderStatus)
+                          )}
                         </div>
                         <span className="text-[11px] text-slate-500 dark:text-gray-500 font-bold block">
                           Ngày đặt: {new Date(order.createdAt).toLocaleString('vi-VN')}
@@ -648,62 +657,77 @@ export default function Profile() {
                       </div>
 
                       <div className="flex items-center gap-2 flex-wrap">
-                        {!isOrdDelivered && !isOrdCancelled && (
-                          <button
-                            onClick={() => handleConfirmDelivery(order._id || order.id || order.orderCode)}
-                            disabled={confirmingOrderId === (order._id || order.id || order.orderCode)}
-                            className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-black text-xs flex items-center gap-1.5 shadow-lg shadow-emerald-500/20 transition-all cursor-pointer disabled:opacity-50"
+                        {isOrderSubscription ? (
+                          <Link
+                            to="/membership"
+                            className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-rose-500 hover:from-amber-300 text-slate-950 font-black text-xs flex items-center gap-1.5 shadow-md shadow-amber-500/20 transition-all"
                           >
-                            <CheckCircle2 className="w-4 h-4" />
-                            {confirmingOrderId === (order._id || order.id || order.orderCode)
-                              ? 'Đang xác nhận...'
-                              : 'Đã nhận được hàng'}
-                          </button>
-                        )}
+                            <Crown className="w-4 h-4 fill-slate-950" /> Xem đặc quyền gói
+                          </Link>
+                        ) : (
+                          <>
+                            {!isOrdDelivered && !isOrdCancelled && (
+                              <button
+                                onClick={() => handleConfirmDelivery(order._id || order.id || order.orderCode)}
+                                disabled={confirmingOrderId === (order._id || order.id || order.orderCode)}
+                                className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-black text-xs flex items-center gap-1.5 shadow-lg shadow-emerald-500/20 transition-all cursor-pointer disabled:opacity-50"
+                              >
+                                <CheckCircle2 className="w-4 h-4" />
+                                {confirmingOrderId === (order._id || order.id || order.orderCode)
+                                  ? 'Đang xác nhận...'
+                                  : 'Đã nhận được hàng'}
+                              </button>
+                            )}
 
-                        <Link
-                          to={`/order-tracking?code=${order.orderCode}`}
-                          className="px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-gray-900 hover:bg-pink-100 dark:hover:bg-gray-800 border border-slate-300 dark:border-gray-700 text-slate-800 dark:text-gray-300 font-bold text-xs flex items-center gap-1.5 transition-colors"
-                        >
-                          <Truck className="w-4 h-4 text-cyan-600 dark:text-cyan-400" /> Tra cứu vận đơn
-                        </Link>
+                            <Link
+                              to={`/order-tracking?code=${order.orderCode}`}
+                              className="px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-gray-900 hover:bg-pink-100 dark:hover:bg-gray-800 border border-slate-300 dark:border-gray-700 text-slate-800 dark:text-gray-300 font-bold text-xs flex items-center gap-1.5 transition-colors"
+                            >
+                              <Truck className="w-4 h-4 text-cyan-600 dark:text-cyan-400" /> Tra cứu vận đơn
+                            </Link>
+                          </>
+                        )}
                       </div>
                     </div>
 
                     <div className="space-y-3">
-                      {order.items?.map((item, idx) => (
-                        <div key={idx} className="flex items-center justify-between gap-4 flex-wrap sm:flex-nowrap">
-                          <div className="flex items-center gap-3">
-                            <img
-                              src={item.image || 'https://images.unsplash.com/photo-1556821840-3a63f95609a7?auto=format&fit=crop&w=300&q=80'}
-                              alt={item.name}
-                              className="w-14 h-14 rounded-xl object-cover border border-pink-200 dark:border-gray-800 flex-shrink-0 shadow-sm"
-                            />
-                            <div className="space-y-0.5">
-                              <h4 className="text-xs font-black text-slate-900 dark:text-white line-clamp-1">
-                                {item.name}
-                              </h4>
-                              <div className="text-[11px] text-slate-600 dark:text-gray-400 space-x-2 font-medium">
-                                {item.size && <span>Size: <strong className="text-slate-900 dark:text-gray-200">{item.size}</strong></span>}
-                                {item.color && <span>Màu: <strong className="text-slate-900 dark:text-gray-200">{item.color}</strong></span>}
-                                <span>SL: <strong className="text-slate-900 dark:text-gray-200">x{item.quantity}</strong></span>
-                              </div>
-                              <span className="text-xs font-black text-pink-600 dark:text-pink-400 font-mono">
-                                {(Number(item.price) || 0).toLocaleString('vi-VN')}đ
-                              </span>
-                            </div>
-                          </div>
+                      {order.items?.map((item, idx) => {
+                        const isSubItem = item.type === 'subscription' || !item.productId || item.name?.includes('GÓI HỘI VIÊN');
 
-                          {isOrdDelivered && (
-                            <button
-                              onClick={() => handleOpenReviewModal(item, order.orderCode)}
-                              className="px-4 py-2 rounded-xl bg-amber-50 dark:bg-pink-500/10 hover:bg-amber-100 dark:hover:bg-pink-500/20 border border-amber-300 dark:border-pink-500/30 text-amber-900 dark:text-pink-300 font-black text-xs flex items-center gap-1.5 transition-all cursor-pointer flex-shrink-0 shadow-sm"
-                            >
-                              <Star className="w-4 h-4 text-amber-500 fill-amber-500" /> Đánh giá
-                            </button>
-                          )}
-                        </div>
-                      ))}
+                        return (
+                          <div key={idx} className="flex items-center justify-between gap-4 flex-wrap sm:flex-nowrap">
+                            <div className="flex items-center gap-3">
+                              <img
+                                src={item.image || 'https://images.unsplash.com/photo-1556821840-3a63f95609a7?auto=format&fit=crop&w=300&q=80'}
+                                alt={item.name}
+                                className="w-14 h-14 rounded-xl object-cover border border-pink-200 dark:border-gray-800 flex-shrink-0 shadow-sm"
+                              />
+                              <div className="space-y-0.5">
+                                <h4 className="text-xs font-black text-slate-900 dark:text-white line-clamp-1">
+                                  {item.name}
+                                </h4>
+                                <div className="text-[11px] text-slate-600 dark:text-gray-400 space-x-2 font-medium">
+                                  {item.size && <span>Gói/Size: <strong className="text-slate-900 dark:text-gray-200">{item.size}</strong></span>}
+                                  {item.color && <span>Màu: <strong className="text-slate-900 dark:text-gray-200">{item.color}</strong></span>}
+                                  <span>SL: <strong className="text-slate-900 dark:text-gray-200">x{item.quantity}</strong></span>
+                                </div>
+                                <span className="text-xs font-black text-pink-600 dark:text-pink-400 font-mono">
+                                  {(Number(item.price) || 0).toLocaleString('vi-VN')}đ
+                                </span>
+                              </div>
+                            </div>
+
+                            {isOrdDelivered && !isSubItem && (
+                              <button
+                                onClick={() => handleOpenReviewModal(item, order.orderCode)}
+                                className="px-4 py-2 rounded-xl bg-amber-50 dark:bg-pink-500/10 hover:bg-amber-100 dark:hover:bg-pink-500/20 border border-amber-300 dark:border-pink-500/30 text-amber-900 dark:text-pink-300 font-black text-xs flex items-center gap-1.5 transition-all cursor-pointer flex-shrink-0 shadow-sm"
+                              >
+                                <Star className="w-4 h-4 text-amber-500 fill-amber-500" /> Đánh giá
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
 
                     <div className="pt-3 border-t border-pink-100 dark:border-gray-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
