@@ -40,6 +40,7 @@ export default function Membership() {
     activePackage,
     activateSubscriptionPackage,
     setTierDemo,
+    refreshUserData,
   } = useAuth();
 
   const navigate = useNavigate();
@@ -47,6 +48,13 @@ export default function Membership() {
   const [showPackageQR, setShowPackageQR] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [claimedVouchers, setClaimedVouchers] = useState({});
+  const [toast, setToast] = useState(null);
+  const [successPlanModal, setSuccessPlanModal] = useState(null);
+
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 4000);
+  };
 
   const spendingTiers = [
     {
@@ -227,14 +235,20 @@ export default function Membership() {
       const res = await orderAPI.checkout(orderPayload);
       if (res.data && res.data.success) {
         setCreatedOrder(res.data.order);
-        setShowPackageQR(true);
         if (refreshUserData) {
           await refreshUserData();
         }
+        confetti({
+          particleCount: 120,
+          spread: 80,
+          origin: { y: 0.6 },
+        });
+        setSuccessPlanModal({ plan, order: res.data.order });
+        showToast(`🎉 Chúc mừng! Bạn đã đăng ký thành công ${plan.name}!`, 'success');
       }
     } catch (err) {
       console.error('Failed to create subscription order:', err);
-      alert(err.response?.data?.message || 'Không thể tạo đơn đăng ký gói. Vui lòng thử lại!');
+      showToast(err.response?.data?.message || 'Không thể tạo đơn đăng ký gói. Vui lòng thử lại sau!', 'error');
     } finally {
       setIsProcessing(false);
     }
@@ -254,6 +268,7 @@ export default function Membership() {
       spread: 60,
       origin: { y: 0.7 },
     });
+    showToast(`🎁 Đã lưu mã voucher ${code} vào kho voucher của bạn!`, 'success');
   };
 
   return (
@@ -538,6 +553,99 @@ export default function Membership() {
           order={createdOrder}
           onClose={handleCloseQRModal}
         />
+      )}
+
+      {/* Modern Animated Toast Notification */}
+      {toast && (
+        <div className="fixed top-20 right-4 z-50 animate-in slide-in-from-top-3 fade-in duration-300">
+          <div
+            className={`px-5 py-3.5 rounded-2xl shadow-2xl border flex items-center gap-3 text-xs font-black backdrop-blur-md ${
+              toast.type === 'success'
+                ? 'bg-emerald-950/90 text-emerald-200 border-emerald-500/50 shadow-emerald-950/50'
+                : toast.type === 'error'
+                ? 'bg-rose-950/90 text-rose-200 border-rose-500/50 shadow-rose-950/50'
+                : 'bg-cyan-950/90 text-cyan-200 border-cyan-500/50 shadow-cyan-950/50'
+            }`}
+          >
+            {toast.type === 'success' ? (
+              <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
+            ) : (
+              <AlertCircle className="w-5 h-5 text-rose-400 flex-shrink-0" />
+            )}
+            <span>{toast.message}</span>
+            <button
+              onClick={() => setToast(null)}
+              className="ml-2 text-slate-400 hover:text-white text-sm"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Membership Activation Celebration Modal */}
+      {successPlanModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-in fade-in">
+          <div className="w-full max-w-lg rounded-3xl bg-white dark:bg-gray-950 border-2 border-pink-300 dark:border-amber-500/40 p-6 sm:p-8 space-y-6 shadow-2xl text-center relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-amber-400/20 to-pink-500/20 rounded-full blur-3xl pointer-events-none" />
+
+            <div className="w-20 h-20 rounded-3xl bg-gradient-to-tr from-amber-400 via-rose-500 to-pink-600 flex items-center justify-center text-white mx-auto shadow-xl shadow-amber-500/30 animate-bounce">
+              <Crown className="w-10 h-10 fill-white" />
+            </div>
+
+            <div className="space-y-1.5">
+              <span className="px-3 py-1 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300 text-[11px] font-black font-mono border border-amber-300 dark:border-amber-500/40">
+                KÍCH HOẠT TỰ ĐỘNG THÀNH CÔNG
+              </span>
+              <h3 className="text-2xl font-black text-slate-900 dark:text-white font-heading mt-2">
+                CHÚC MỪNG BẠN ĐÃ ĐĂNG KÝ {successPlanModal.plan.name}!
+              </h3>
+              <p className="text-xs text-slate-600 dark:text-gray-400 font-medium max-w-sm mx-auto">
+                Mọi quyền lợi giảm giá và ưu đãi độc quyền của gói đã sẵn sàng áp dụng cho tài khoản của bạn ngay từ đơn hàng tiếp theo!
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-pink-50/80 dark:bg-gray-900/80 border border-pink-200 dark:border-gray-800 text-left space-y-2 text-xs">
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="text-slate-500 dark:text-gray-400 font-bold">Mã đơn đăng ký:</span>
+                <span className="font-mono font-black text-pink-600 dark:text-cyan-400">#{successPlanModal.order?.orderCode}</span>
+              </div>
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="text-slate-500 dark:text-gray-400 font-bold">Thời hạn hiệu lực:</span>
+                <span className="font-bold text-slate-800 dark:text-gray-200">{successPlanModal.plan.period}</span>
+              </div>
+              <div className="pt-2 border-t border-pink-200 dark:border-gray-800 space-y-1">
+                {successPlanModal.plan.perks.slice(0, 3).map((pk, i) => (
+                  <div key={i} className="flex items-center gap-2 text-slate-700 dark:text-gray-300 font-semibold text-[11px]">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
+                    <span>{pk}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+              <button
+                onClick={() => {
+                  setSuccessPlanModal(null);
+                  navigate('/shop');
+                }}
+                className="py-3.5 px-4 rounded-xl bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-400 text-white font-black text-xs shadow-lg shadow-pink-500/25 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <Sparkles className="w-4 h-4" /> Mua sắm áp dụng ngay
+              </button>
+              <button
+                onClick={() => {
+                  setSuccessPlanModal(null);
+                  navigate('/profile?tab=vouchers');
+                }}
+                className="py-3.5 px-4 rounded-xl bg-slate-100 dark:bg-gray-900 hover:bg-pink-100 dark:hover:bg-gray-800 border border-slate-300 dark:border-gray-700 text-slate-800 dark:text-gray-300 font-black text-xs transition-colors cursor-pointer"
+              >
+                Xem kho Voucher
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
