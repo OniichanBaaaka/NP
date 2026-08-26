@@ -399,6 +399,22 @@ export default function Profile() {
     },
   ];
 
+  // Tập hợp tất cả sản phẩm từ đơn ĐÃ GIAO mà chưa được đánh giá
+  const reviewedProductIds = new Set(myReviews.map((r) => r.productId));
+  const pendingReviewItems = orders
+    .filter((o) => o.status === 'DELIVERED')
+    .flatMap((o) =>
+      (o.items || []).map((item) => ({
+        ...item,
+        orderCode: o.orderCode,
+        orderId: o._id || o.id,
+      }))
+    )
+    .filter(
+      (item) =>
+        !reviewedProductIds.has(item.productId || item._id || item.id)
+    );
+
   const getStatusBadge = (status) => {
     switch (status) {
       case 'DELIVERED':
@@ -475,7 +491,7 @@ export default function Profile() {
         {[
           { id: 'orders', label: 'Lịch sử mua hàng', icon: Package, count: orders.length },
           { id: 'vouchers', label: 'Kho Voucher & Ưu đãi', icon: Ticket, count: voucherList.length },
-          { id: 'reviews', label: 'Đánh giá sản phẩm', icon: Star, count: myReviews.length },
+          { id: 'reviews', label: 'Đánh giá sản phẩm', icon: Star, count: pendingReviewItems.length + myReviews.length },
           { id: 'support', label: 'CSKH & Trợ giúp 24/7', icon: Headphones },
           { id: 'account', label: 'Hồ sơ & Bảo mật', icon: ShieldCheck },
         ].map((tab) => {
@@ -726,73 +742,133 @@ export default function Profile() {
 
       {/* TAB 3: ĐÁNH GIÁ MẶT HÀNG ĐÃ MUA */}
       {activeTab === 'reviews' && (
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-bold text-white font-heading">
-              ĐÁNH GIÁ CỦA BẠN ({myReviews.length})
-            </h3>
-            <span className="text-xs text-gray-400">
-              Giúp cộng đồng có cái nhìn chân thực nhất về sản phẩm
-            </span>
-          </div>
+        <div className="space-y-8">
 
+          {/* SECTION 1: Hàng đã nhận — chờ đánh giá */}
           {reviewsLoading ? (
-            <div className="text-center py-16">
-              <RefreshCw className="w-8 h-8 text-pink-500 animate-spin mx-auto mb-3" />
-              <p className="text-xs text-gray-400">Đang tải danh sách đánh giá...</p>
-            </div>
-          ) : myReviews.length === 0 ? (
-            <div className="text-center py-16 rounded-3xl bg-gray-950/60 border border-gray-800 space-y-3">
-              <Star className="w-12 h-12 text-gray-600 mx-auto" />
-              <h4 className="text-base font-bold text-white">Bạn chưa có đánh giá nào</h4>
-              <p className="text-xs text-gray-400 max-w-sm mx-auto">
-                Khi các đơn hàng được giao thành công, bạn có thể gửi nhận xét và chấm điểm sao tại đây!
-              </p>
+            <div className="text-center py-12">
+              <RefreshCw className="w-7 h-7 text-pink-500 animate-spin mx-auto mb-2" />
+              <p className="text-xs text-gray-400">Đang tải...</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {myReviews.map((rev) => (
-                <div
-                  key={rev._id || rev.id}
-                  className="p-5 rounded-3xl bg-gray-950/90 border border-gray-800 space-y-3 shadow-xl"
-                >
-                  <div className="flex items-center gap-3">
-                    <img
-                      src={rev.productImage || 'https://images.unsplash.com/photo-1556821840-3a63f95609a7?auto=format&fit=crop&w=300&q=80'}
-                      alt={rev.productName}
-                      className="w-12 h-12 rounded-xl object-cover border border-gray-800 flex-shrink-0"
-                    />
-                    <div className="space-y-0.5 flex-1">
-                      <h4 className="text-xs font-bold text-white line-clamp-1">{rev.productName}</h4>
-                      <div className="flex items-center gap-1">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <Star
-                            key={star}
-                            className={`w-3.5 h-3.5 ${
-                              star <= rev.rating ? 'text-amber-400 fill-amber-400' : 'text-gray-700'
-                            }`}
-                          />
-                        ))}
-                        <span className="text-[11px] text-gray-400 ml-1">({rev.rating}/5)</span>
-                      </div>
-                    </div>
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
-                      {rev.fitEvaluation}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-base font-extrabold text-white font-heading flex items-center gap-2">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                  HÀNG ĐÃ NHẬN — CHỜ ĐÁNH GIÁ
+                  {pendingReviewItems.length > 0 && (
+                    <span className="px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 text-[11px] font-mono font-black animate-pulse">
+                      {pendingReviewItems.length} sản phẩm
                     </span>
-                  </div>
+                  )}
+                </h3>
+              </div>
 
-                  <p className="text-xs text-gray-300 bg-gray-900/60 p-3 rounded-2xl border border-gray-800/80 leading-relaxed">
-                    "{rev.comment}"
-                  </p>
-
-                  <div className="flex items-center justify-between text-[11px] text-gray-500 pt-1">
-                    <span>Đơn hàng: #{rev.orderCode || 'XIV-VERIFIED'}</span>
-                    <span>{new Date(rev.createdAt).toLocaleDateString('vi-VN')}</span>
-                  </div>
+              {pendingReviewItems.length === 0 ? (
+                <div className="p-5 rounded-2xl bg-gray-900/60 border border-gray-800 text-center text-xs text-gray-500 space-y-1">
+                  <CheckCircle2 className="w-8 h-8 text-emerald-500/40 mx-auto mb-2" />
+                  <p>Tất cả sản phẩm đã được đánh giá. Cảm ơn bạn! 🎉</p>
                 </div>
-              ))}
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {pendingReviewItems.map((item, idx) => (
+                    <div
+                      key={`${item.productId}-${idx}`}
+                      className="flex items-center gap-3 p-4 rounded-2xl bg-gray-950/90 border border-amber-500/20 hover:border-amber-500/40 shadow-lg transition-all"
+                    >
+                      <img
+                        src={item.image || 'https://images.unsplash.com/photo-1556821840-3a63f95609a7?auto=format&fit=crop&w=300&q=80'}
+                        alt={item.name}
+                        className="w-14 h-14 rounded-xl object-cover border border-gray-800 flex-shrink-0"
+                      />
+                      <div className="flex-1 min-w-0 space-y-0.5">
+                        <h4 className="text-xs font-bold text-white line-clamp-1">{item.name}</h4>
+                        <div className="text-[11px] text-gray-400 space-x-2">
+                          {item.size && <span>Size: <strong className="text-gray-300">{item.size}</strong></span>}
+                          {item.color && <span>Màu: <strong className="text-gray-300">{item.color}</strong></span>}
+                        </div>
+                        <span className="text-[10px] text-amber-400 font-mono font-bold">#{item.orderCode}</span>
+                      </div>
+                      <button
+                        onClick={() => {
+                          handleOpenReviewModal(item, item.orderCode);
+                          // Cuộn lên modal
+                        }}
+                        className="flex-shrink-0 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-black font-extrabold text-[11px] flex items-center gap-1 shadow-md shadow-amber-500/20 transition-all cursor-pointer"
+                      >
+                        <Star className="w-3.5 h-3.5 fill-black" /> Đánh giá
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
+
+          {/* SECTION 2: Đánh giá đã gửi */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between pt-2 border-t border-gray-800">
+              <h3 className="text-base font-extrabold text-white font-heading flex items-center gap-2">
+                <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+                ĐÁNH GIÁ ĐÃ GỬI ({myReviews.length})
+              </h3>
+              <span className="text-xs text-gray-500">Giúp cộng đồng có cái nhìn chân thực</span>
+            </div>
+
+            {myReviews.length === 0 ? (
+              <div className="text-center py-10 rounded-3xl bg-gray-950/60 border border-gray-800 space-y-2">
+                <Star className="w-10 h-10 text-gray-700 mx-auto" />
+                <p className="text-xs text-gray-500">Chưa có đánh giá nào được gửi</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {myReviews.map((rev) => (
+                  <div
+                    key={rev._id || rev.id}
+                    className="p-5 rounded-3xl bg-gray-950/90 border border-gray-800 space-y-3 shadow-xl"
+                  >
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={rev.productImage || 'https://images.unsplash.com/photo-1556821840-3a63f95609a7?auto=format&fit=crop&w=300&q=80'}
+                        alt={rev.productName}
+                        className="w-12 h-12 rounded-xl object-cover border border-gray-800 flex-shrink-0"
+                      />
+                      <div className="space-y-0.5 flex-1 min-w-0">
+                        <h4 className="text-xs font-bold text-white line-clamp-1">{rev.productName}</h4>
+                        <div className="flex items-center gap-1">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <Star
+                              key={star}
+                              className={`w-3.5 h-3.5 ${
+                                star <= rev.rating ? 'text-amber-400 fill-amber-400' : 'text-gray-700'
+                              }`}
+                            />
+                          ))}
+                          <span className="text-[11px] text-gray-400 ml-1">({rev.rating}/5)</span>
+                        </div>
+                      </div>
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 flex-shrink-0">
+                        {rev.fitEvaluation}
+                      </span>
+                    </div>
+
+                    <p className="text-xs text-gray-300 bg-gray-900/60 p-3 rounded-2xl border border-gray-800/80 leading-relaxed">
+                      "{rev.comment}"
+                    </p>
+
+                    <div className="flex items-center justify-between text-[11px] text-gray-500 pt-1">
+                      <span>Đơn hàng: #{rev.orderCode || 'XIV-VERIFIED'}</span>
+                      <span className="flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                        {new Date(rev.createdAt).toLocaleDateString('vi-VN')}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
         </div>
       )}
 
