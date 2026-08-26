@@ -379,18 +379,18 @@ export default function Profile() {
             <div className="flex items-center justify-between text-xs">
               <span className="text-gray-400 font-bold">Chi tiêu tích lũy:</span>
               <span className="text-pink-400 font-mono font-black">
-                {userSpending.toLocaleString('vi-VN')}đ
+                {(userSpending || 0).toLocaleString('vi-VN')}đ
               </span>
             </div>
             <div className="w-full h-2 rounded-full bg-gray-800 overflow-hidden">
               <div
                 className="h-full bg-gradient-to-r from-pink-500 to-cyan-400 rounded-full transition-all duration-500"
-                style={{ width: `${nextTierProgress}%` }}
+                style={{ width: `${nextTierProgress || 0}%` }}
               />
             </div>
             <div className="flex items-center justify-between text-[11px] text-gray-400">
-              <span>Hội viên: <strong className="text-white">{currentTier}</strong></span>
-              <span>Chiết khấu: <strong className="text-emerald-400 font-bold">{(tierDiscountRate * 100).toFixed(0)}%</strong></span>
+              <span>Hội viên: <strong className="text-white">{currentTier || 'MEMBER'}</strong></span>
+              <span>Chiết khấu: <strong className="text-emerald-400 font-bold">{(((tierDiscountRate || 0)) * 100).toFixed(0)}%</strong></span>
             </div>
           </div>
         </div>

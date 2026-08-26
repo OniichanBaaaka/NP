@@ -17,6 +17,10 @@ import {
   LogIn,
   ArrowRight,
   Flame,
+  User,
+  Ticket,
+  Star,
+  Headphones,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
