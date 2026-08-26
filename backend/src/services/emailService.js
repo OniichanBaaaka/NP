@@ -1,24 +1,46 @@
 const nodemailer = require('nodemailer');
 
-const emailUser = process.env.EMAIL_USER || '';
-const emailPass = process.env.EMAIL_PASS || '';
+function getTransporter() {
+  const emailUser = process.env.EMAIL_USER || '';
+  const emailPass = (process.env.EMAIL_PASS || '').replace(/\s+/g, ''); // Loại bỏ khoảng trắng nếu có
 
-let transporter = null;
-if (emailUser && emailPass) {
-  transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: emailUser,
-      pass: emailPass,
-    },
-  });
+  if (emailUser && emailPass) {
+    return {
+      transporter: nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: emailUser,
+          pass: emailPass,
+        },
+      }),
+      emailUser,
+    };
+  }
+  return { transporter: null, emailUser: '' };
 }
 
 /**
- * Gửi mã OTP xác thực qua Email
+ * Gửi mã OTP xác thực qua Email (Hỗ trợ Đăng ký, Quên mật khẩu, Đổi mật khẩu)
  */
-async function sendOtpEmail(toEmail, otpCode) {
+async function sendOtpEmail(toEmail, otpCode, type = 'register') {
   const formattedOtp = otpCode.toString().split('').join(' ');
+
+  let title = 'MÃ XÁC THỰC ĐĂNG KÝ (OTP)';
+  let badgeText = 'XÁC THỰC TÀI KHOẢN MỚI';
+  let desc = 'Cảm ơn bạn đã gia nhập cộng đồng thời trang <strong>XIV STUDIO</strong>. Hãy sử dụng mã OTP gồm 6 chữ số dưới đây để hoàn tất việc đăng ký tài khoản của bạn:';
+  let subject = `[XIV STUDIO] Mã xác thực đăng ký tài khoản: ${otpCode}`;
+
+  if (type === 'forgot_password' || type === 'reset_password') {
+    title = 'MÃ XÁC THỰC ĐẶT LẠI MẬT KHẨU (OTP)';
+    badgeText = 'YÊU CẦU ĐẶT LẠI MẬT KHẨU';
+    desc = 'Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản XIV STUDIO của bạn. Hãy sử dụng mã OTP gồm 6 chữ số dưới đây để xác nhận đổi mật khẩu mới:';
+    subject = `[XIV STUDIO] Mã xác thực đặt lại mật khẩu: ${otpCode}`;
+  } else if (type === 'change_password') {
+    title = 'MÃ XÁC THỰC ĐỔI MẬT KHẨU (OTP)';
+    badgeText = 'BẢO MẬT TÀI KHOẢN';
+    desc = 'Bạn đang thực hiện thao tác đổi mật khẩu tài khoản. Vui lòng nhập mã OTP gồm 6 chữ số dưới đây để hoàn tất:';
+    subject = `[XIV STUDIO] Mã xác thực đổi mật khẩu: ${otpCode}`;
+  }
 
   const htmlContent = `
 <!DOCTYPE html>
@@ -47,9 +69,9 @@ async function sendOtpEmail(toEmail, otpCode) {
       <p>HIGH-END STREETWEAR & AI</p>
     </div>
     <div class="body">
-      <div class="badge">XÁC THỰC DANH TÍNH TÀI KHOẢN</div>
-      <h2>MÃ XÁC THỰC ĐĂNG KÝ (OTP)</h2>
-      <p>Cảm ơn bạn đã gia nhập cộng đồng thời trang <strong>XIV STUDIO</strong>. Hãy sử dụng mã OTP gồm 6 chữ số dưới đây để hoàn tất việc đăng ký tài khoản của bạn:</p>
+      <div class="badge">${badgeText}</div>
+      <h2>${title}</h2>
+      <p>${desc}</p>
       
       <div class="otp-box">
         <div class="otp-code">${formattedOtp}</div>
@@ -57,7 +79,7 @@ async function sendOtpEmail(toEmail, otpCode) {
 
       <p style="font-size: 12px; color: #f59e0b;">
         ⏱️ Mã xác thực này có hiệu lực trong vòng <strong>5 phút</strong>.<br/>
-        Tuyệt đối không chia sẻ mã này cho bất kỳ ai để bảo vệ an toàn tài khoản.
+        Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email hoặc liên hệ CSKH XIV STUDIO.
       </p>
     </div>
     <div class="footer">
@@ -69,12 +91,14 @@ async function sendOtpEmail(toEmail, otpCode) {
 </html>
   `;
 
-  if (transporter) {
+  const { transporter, emailUser } = getTransporter();
+
+  if (transporter && emailUser) {
     try {
       const info = await transporter.sendMail({
         from: `"XIV STUDIO Security" <${emailUser}>`,
         to: toEmail,
-        subject: `[XIV STUDIO] Mã xác thực đăng ký tài khoản: ${otpCode}`,
+        subject: subject,
         html: htmlContent,
       });
       console.log(`✉️ Đã gửi OTP thành công tới ${toEmail}: ${info.messageId}`);
@@ -86,7 +110,7 @@ async function sendOtpEmail(toEmail, otpCode) {
 
   // Fallback: in mã OTP ra Terminal phục vụ kiểm thử
   console.log(`\n======================================================`);
-  console.log(`🔑 [XIV OTP SIMULATOR] MÃ XÁC THỰC GMAIL CHO: ${toEmail}`);
+  console.log(`🔑 [XIV OTP SIMULATOR] MÃ XÁC THỰC CHO: ${toEmail} (${type})`);
   console.log(`👉 MÃ OTP (6 số): ${otpCode}`);
   console.log(`⏱️ Thời hạn: 5 phút`);
   console.log(`======================================================\n`);

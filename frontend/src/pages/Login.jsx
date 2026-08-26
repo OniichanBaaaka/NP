@@ -118,7 +118,12 @@ export default function Login() {
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-slate-800 dark:text-gray-300 font-black">Mật khẩu</label>
+              <div className="flex items-center justify-between">
+                <label className="text-slate-800 dark:text-gray-300 font-black">Mật khẩu</label>
+                <Link to="/forgot-password" className="text-pink-600 dark:text-cyan-400 hover:underline font-bold text-[11px]">
+                  Quên mật khẩu?
+                </Link>
+              </div>
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}

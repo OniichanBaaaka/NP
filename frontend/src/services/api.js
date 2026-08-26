@@ -22,6 +22,10 @@ export const authAPI = {
   login: (data) => api.post('/auth/login', data),
   register: (data) => api.post('/auth/register', data),
   sendOtp: (data) => api.post('/auth/send-otp', data),
+  forgotPasswordSendOtp: (data) => api.post('/auth/forgot-password/send-otp', data),
+  forgotPasswordReset: (data) => api.post('/auth/forgot-password/reset', data),
+  changePasswordSendOtp: () => api.post('/auth/change-password/send-otp'),
+  changePassword: (data) => api.post('/auth/change-password', data),
   getMe: () => api.get('/auth/me'),
 };
 

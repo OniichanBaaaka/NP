@@ -14,6 +14,7 @@ import OrderTracking from './pages/OrderTracking';
 import Membership from './pages/Membership';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import ForgotPassword from './pages/ForgotPassword';
 import EmployeeInventory from './pages/EmployeeInventory';
 import AdminDashboard from './pages/AdminDashboard';
 
@@ -64,6 +65,7 @@ function MainLayout() {
           <Route path="/order-tracking" element={<OrderTracking />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
 
           {/* Employee & Admin Dashboard */}
           <Route
