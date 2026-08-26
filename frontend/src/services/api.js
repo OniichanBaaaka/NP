@@ -1,7 +1,9 @@
 import axios from 'axios';
 
+const apiBase = import.meta.env.VITE_API_URL || '';
+
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: `${apiBase}/api`,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -38,11 +40,11 @@ export const categoryAPI = {
 };
 
 export const orderAPI = {
-  checkout: (data) => api.post('/orders/checkout', data),
+  checkout: (data) => api.post('/orders', data),
   getMyOrders: () => api.get('/orders/my-orders'),
   getAll: (params) => api.get('/orders', { params }),
   getTracking: (code) => api.get(`/orders/track/${code}`),
-  updateStatus: (id, data) => api.patch(`/orders/${id}/status`, data),
+  updateStatus: (id, data) => api.put(`/orders/${id}/status`, data),
   getKPIs: () => api.get('/orders/kpi/dashboard'),
 };
 
