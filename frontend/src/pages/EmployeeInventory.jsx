@@ -397,15 +397,18 @@ export default function EmployeeInventory() {
         </div>
       )}
 
-      {/* TAB 2: ORDER STATUS WORKFLOW (5 STATES & INVENTORY DEDUCTION) */}
+      {/* TAB 2: ORDER STATUS WORKFLOW (SHOPPING ORDERS ONLY FOR EMPLOYEES) */}
       {activeTab === 'orders' && (
         <div className="space-y-4">
-          <div className="p-4 rounded-2xl bg-cyan-50 dark:bg-cyan-950/30 border border-cyan-200 dark:border-cyan-800 text-xs text-cyan-800 dark:text-cyan-300 flex items-center gap-2 shadow-sm">
-            <CheckCircle className="w-4 h-4 flex-shrink-0 text-cyan-600 dark:text-cyan-400" />
-            <span>
-              <strong>Quy tắc nghiệp vụ:</strong> Khi chuyển trạng thái đơn hàng sang{' '}
-              <strong className="text-emerald-600 dark:text-emerald-400 font-mono">"completed"</strong>, hệ thống tự động
-              trừ tồn kho sản phẩm, tăng <strong className="text-slate-900 dark:text-white font-mono">soldCount</strong>, và tự động kích hoạt gói thành viên nếu là đơn mua gói!
+          <div className="p-4 rounded-2xl bg-cyan-50 dark:bg-cyan-950/30 border border-cyan-200 dark:border-cyan-800 text-xs text-cyan-800 dark:text-cyan-300 flex items-center justify-between gap-2 shadow-sm">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="w-4 h-4 flex-shrink-0 text-cyan-600 dark:text-cyan-400" />
+              <span>
+                <strong>Phân quyền Nhân viên:</strong> Bạn có quyền quản lý và cập nhật tiến trình <strong>Đơn hàng Mua sắm (Sản phẩm thời trang)</strong>. Đơn đăng ký Gói Hội Viên do Admin quản lý độc quyền.
+              </span>
+            </div>
+            <span className="px-2.5 py-1 rounded-full bg-cyan-200/50 dark:bg-cyan-900/50 font-mono font-bold text-[10px]">
+              {orders.filter((o) => o.orderType !== 'MEMBERSHIP' && !o.items?.some((i) => i.type === 'subscription')).length} Đơn mua sắm
             </span>
           </div>
 
@@ -414,36 +417,29 @@ export default function EmployeeInventory() {
               <thead className="bg-slate-50 dark:bg-gray-900 text-slate-500 dark:text-gray-400 uppercase font-mono tracking-wider border-b border-slate-200 dark:border-gray-800">
                 <tr>
                   <th className="p-4">Mã Đơn / Khách hàng</th>
-                  <th className="p-4">Sản phẩm / Dịch vụ</th>
+                  <th className="p-4">Sản phẩm thời trang</th>
                   <th className="p-4">Tổng tiền & PT</th>
                   <th className="p-4">Trạng thái hiện tại</th>
                   <th className="p-4">Cập nhật 5 bước trạng thái</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-gray-800 text-slate-700 dark:text-gray-300">
-                {orders.map((ord) => {
-                  const isSub = ord.items?.some(it => it.type === 'subscription' || it.name?.includes('GÓI HỘI VIÊN'));
-
-                  return (
-                    <tr key={ord.id} className="hover:bg-slate-50 dark:hover:bg-gray-900/40 transition-colors">
-                      <td className="p-4">
-                        <div className="flex items-center gap-1.5 flex-wrap">
+                {orders
+                  .filter((ord) => ord.orderType !== 'MEMBERSHIP' && !ord.items?.some((it) => it.type === 'subscription' || !it.productId || it.name?.includes('GÓI HỘI VIÊN')))
+                  .map((ord) => {
+                    return (
+                      <tr key={ord.id} className="hover:bg-slate-50 dark:hover:bg-gray-900/40 transition-colors">
+                        <td className="p-4">
                           <span className="font-mono font-bold text-cyan-600 dark:text-cyan-400 block">
-                            {ord.orderCode}
+                            #{ord.orderCode}
                           </span>
-                          {isSub && (
-                            <span className="px-1.5 py-0.2 rounded bg-pink-100 dark:bg-pink-950 text-pink-700 dark:text-pink-400 text-[9px] font-bold font-mono border border-pink-200 dark:border-pink-800">
-                              👑 GÓI HỘI VIÊN
-                            </span>
-                          )}
-                        </div>
-                        <span className="text-slate-900 dark:text-white font-semibold block mt-0.5">
-                          {ord.customerInfo?.name}
-                        </span>
-                        <span className="text-slate-500 dark:text-gray-500 text-[11px] block">
-                          {ord.customerInfo?.phone}
-                        </span>
-                      </td>
+                          <span className="text-slate-900 dark:text-white font-semibold block mt-0.5">
+                            {ord.customerInfo?.name}
+                          </span>
+                          <span className="text-slate-500 dark:text-gray-500 text-[11px] block">
+                            {ord.customerInfo?.phone}
+                          </span>
+                        </td>
 
                       <td className="p-4">
                         <div className="space-y-1 max-w-xs">

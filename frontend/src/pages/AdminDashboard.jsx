@@ -182,12 +182,31 @@ export default function AdminDashboard() {
     }
   };
 
+  // Handle Admin Update Shopping Order Status
+  const handleUpdateShoppingOrderStatus = async (orderId, newStatus) => {
+    try {
+      const res = await orderAPI.updateStatus(orderId, newStatus, `Admin cập nhật trạng thái sang ${newStatus}`);
+      if (res.data.success) {
+        setActionNotice({ type: 'success', message: `Đã cập nhật đơn hàng #${orderId} sang "${newStatus}"!` });
+        loadAdminData();
+      }
+    } catch (e) {
+      setActionNotice({
+        type: 'error',
+        message: e.response?.data?.message || 'Lỗi khi cập nhật trạng thái đơn hàng',
+      });
+    }
+  };
+
+  const shoppingOrders = (ordersList || []).filter((o) =>
+    o.orderType === 'SHOPPING' || (!o.orderType && !o.items?.some((it) => it.type === 'subscription' || !it.productId || it.name?.includes('GÓI HỘI VIÊN')))
+  );
+
   const subscriptionOrders = (ordersList || []).filter((o) =>
-    (o.items || []).some(
-      (it) => it.type === 'subscription' || !it.productId || it.name?.includes('GÓI HỘI VIÊN')
-    )
+    o.orderType === 'MEMBERSHIP' || o.items?.some((it) => it.type === 'subscription' || !it.productId || it.name?.includes('GÓI HỘI VIÊN'))
   );
   const pendingSubCount = subscriptionOrders.filter((o) => (o.orderStatus || o.status) === 'PENDING').length;
+  const pendingShopCount = shoppingOrders.filter((o) => (o.orderStatus || o.status) === 'PENDING').length;
 
   if (loading && !kpis) {
     return (
@@ -376,6 +395,10 @@ export default function AdminDashboard() {
         {[
           { id: 'overview', label: 'Tổng quan & Top Bán Chạy' },
           {
+            id: 'shopping',
+            label: `🛍️ Đơn Mua Sắm (${shoppingOrders.length})`,
+          },
+          {
             id: 'subscriptions',
             label: `👑 Duyệt Đơn Gói Hội Viên ${
               pendingSubCount > 0 ? `(${pendingSubCount} Chờ Duyệt)` : `(${subscriptionOrders.length})`
@@ -398,6 +421,110 @@ export default function AdminDashboard() {
           </button>
         ))}
       </div>
+
+      {/* Tab: Shopping Orders Management (Admin toàn quyền quản lý đơn mua sắm) */}
+      {activeTab === 'shopping' && (
+        <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-gray-950/80 border-2 border-pink-200 dark:border-gray-800 space-y-5 shadow-md">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-pink-100 dark:border-gray-800">
+            <div>
+              <h3 className="text-base font-black text-slate-950 dark:text-white uppercase tracking-wider font-heading flex items-center gap-2">
+                <ShoppingBag className="w-5 h-5 text-pink-600" /> Quản Lý Đơn Hàng Mua Sắm Sản Phẩm Thời Trang
+              </h3>
+              <p className="text-xs text-slate-600 dark:text-gray-400 font-medium">
+                Admin có toàn quyền xem, duyệt, chuyển trạng thái hoặc hủy mọi đơn hàng mua sắm trong hệ thống.
+              </p>
+            </div>
+            <button
+              onClick={loadAdminData}
+              className="px-4 py-2 rounded-xl bg-pink-50 dark:bg-gray-900 border border-pink-200 dark:border-gray-800 text-xs font-black text-pink-600 dark:text-pink-400 flex items-center gap-1.5 hover:bg-pink-100 transition-all self-start"
+            >
+              <RefreshCw className="w-3.5 h-3.5" /> Làm mới
+            </button>
+          </div>
+
+          {shoppingOrders.length === 0 ? (
+            <div className="text-center py-12 space-y-2 text-slate-500 dark:text-gray-400 text-xs">
+              <ShoppingBag className="w-10 h-10 text-slate-400 mx-auto" />
+              <p className="font-bold">Chưa có đơn hàng mua sắm nào.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="border-b border-pink-200 dark:border-gray-800 text-slate-600 dark:text-gray-400 font-mono uppercase text-[10px] font-black">
+                  <tr>
+                    <th className="py-3 px-2">Mã đơn</th>
+                    <th className="py-3 px-2">Khách hàng & Địa chỉ</th>
+                    <th className="py-3 px-2">Sản phẩm</th>
+                    <th className="py-3 px-2">Tổng tiền</th>
+                    <th className="py-3 px-2">Trạng thái hiện tại</th>
+                    <th className="py-3 px-2 text-right">Cập nhật trạng thái</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-pink-100 dark:divide-gray-800">
+                  {shoppingOrders.map((ord) => {
+                    const st = (ord.orderStatus || ord.status || 'PENDING').toUpperCase();
+                    return (
+                      <tr key={ord.id || ord._id} className="hover:bg-pink-50/60 dark:hover:bg-gray-900/50">
+                        <td className="py-3 px-2 font-mono font-black text-pink-600 dark:text-cyan-400">
+                          #{ord.orderCode}
+                        </td>
+                        <td className="py-3 px-2">
+                          <span className="font-black text-slate-900 dark:text-white block">{ord.customerName || ord.customerInfo?.name}</span>
+                          <span className="text-[11px] text-slate-500 dark:text-gray-400 font-mono block">{ord.customerPhone || ord.customerInfo?.phone}</span>
+                          <span className="text-[10px] text-slate-400 block max-w-xs truncate">{ord.shippingAddress || ord.customerInfo?.address}</span>
+                        </td>
+                        <td className="py-3 px-2">
+                          <div className="space-y-1 max-w-xs">
+                            {ord.items?.map((it, idx) => (
+                              <div key={idx} className="text-[11px] text-slate-700 dark:text-gray-300 truncate">
+                                • {it.name} <span className="font-mono font-bold text-pink-600">x{it.quantity}</span> ({it.size || 'L'})
+                              </div>
+                            ))}
+                          </div>
+                        </td>
+                        <td className="py-3 px-2 font-mono font-black text-slate-900 dark:text-white">
+                          {(ord.finalAmount || ord.totalAmount || 0).toLocaleString('vi-VN')}đ
+                          <span className="block text-[10px] font-normal text-slate-400">{ord.paymentMethod} • {ord.paymentStatus}</span>
+                        </td>
+                        <td className="py-3 px-2">
+                          <span
+                            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black border ${
+                              st === 'DELIVERED'
+                                ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border-emerald-300'
+                                : st === 'SHIPPING'
+                                ? 'bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300 border-blue-300'
+                                : st === 'PROCESSING'
+                                ? 'bg-purple-100 dark:bg-purple-950 text-purple-800 dark:text-purple-300 border-purple-300'
+                                : st === 'CANCELLED'
+                                ? 'bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 border-rose-300'
+                                : 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border-amber-300'
+                            }`}
+                          >
+                            {st}
+                          </span>
+                        </td>
+                        <td className="py-3 px-2 text-right">
+                          <select
+                            value={st}
+                            onChange={(e) => handleUpdateShoppingOrderStatus(ord.id || ord._id || ord.orderCode, e.target.value)}
+                            className="px-2.5 py-1 rounded-lg font-bold text-[11px] font-mono outline-none cursor-pointer border border-pink-200 dark:border-gray-800 bg-white dark:bg-gray-900 text-slate-900 dark:text-gray-200"
+                          >
+                            <option value="PENDING">1. PENDING (Chờ duyệt)</option>
+                            <option value="PROCESSING">2. PROCESSING (Đóng gói)</option>
+                            <option value="SHIPPING">3. SHIPPING (Đang giao)</option>
+                            <option value="DELIVERED">4. DELIVERED (Đã giao xong)</option>
+                            <option value="CANCELLED">5. CANCELLED (Hủy đơn)</option>
+                          </select>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Tab: Subscriptions Approval (Admin Duyệt hoặc Hủy đơn gói hội viên) */}
       {activeTab === 'subscriptions' && (

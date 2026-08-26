@@ -129,6 +129,12 @@ const orderSchema = new mongoose.Schema(
       enum: ['PENDING', 'PAID', 'FAILED'],
       default: 'PENDING',
     },
+    orderType: {
+      type: String,
+      enum: ['SHOPPING', 'MEMBERSHIP'],
+      default: 'SHOPPING',
+      index: true,
+    },
     // 5 trạng thái đơn hàng chuẩn
     orderStatus: {
       type: String,

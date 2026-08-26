@@ -150,9 +150,12 @@ async function createOrder({ userId, customerInfo, items, paymentMethod, voucher
     validUserId = userId;
   }
 
+  const orderType = isSubscriptionOrder ? 'MEMBERSHIP' : 'SHOPPING';
+
   const newOrder = await Order.create({
     orderCode,
     userId: validUserId,
+    orderType,
     customerName: customerInfo.name.trim(),
     customerEmail: (customerInfo.email || 'customer@gmail.com').trim().toLowerCase(),
     customerPhone: customerInfo.phone.trim(),
@@ -313,10 +316,15 @@ function formatOrderRecord(order) {
   }
 
   const rawStatus = (doc.orderStatus || doc.status || 'PENDING').toUpperCase();
+  const isSubscriptionOrder = (doc.items || []).some(
+    (it) => it.type === 'subscription' || !it.productId || it.name?.includes('GÓI HỘI VIÊN')
+  );
+  const normalizedOrderType = doc.orderType || (isSubscriptionOrder ? 'MEMBERSHIP' : 'SHOPPING');
 
   return {
     ...doc,
     id: doc._id ? String(doc._id) : doc.id,
+    orderType: normalizedOrderType,
     status: rawStatus,
     orderStatus: rawStatus,
     customerInfo: {

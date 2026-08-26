@@ -41,11 +41,18 @@ async function getMyOrders(req, res) {
 
 async function getAllOrders(req, res) {
   try {
-    const { status, search, limit } = req.query;
+    const { status, search, limit, orderType } = req.query;
 
     const filter = {};
     if (status) {
       filter.orderStatus = status.toUpperCase();
+    }
+
+    // Phân quyền: Employee chỉ được xem đơn hàng mua sắm (SHOPPING)
+    if (req.user && req.user.role === 'employee') {
+      filter.orderType = { $ne: 'MEMBERSHIP' };
+    } else if (orderType) {
+      filter.orderType = orderType.toUpperCase();
     }
 
     if (search && search.trim()) {
@@ -66,7 +73,12 @@ async function getAllOrders(req, res) {
     }
 
     const orders = await query.exec();
-    const formatted = orders.map(orderService.formatOrderRecord);
+    let formatted = orders.map(orderService.formatOrderRecord);
+
+    // Bộ lọc phụ bảo vệ: nếu employee, loại bỏ mọi đơn có subscription item
+    if (req.user && req.user.role === 'employee') {
+      formatted = formatted.filter((o) => o.orderType !== 'MEMBERSHIP');
+    }
 
     return res.json({ success: true, count: formatted.length, orders: formatted });
   } catch (error) {
@@ -105,8 +117,34 @@ async function updateStatus(req, res) {
       return res.status(400).json({ success: false, message: 'Vui lòng cung cấp trạng thái mới' });
     }
 
+    let targetOrder = null;
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      targetOrder = await Order.findById(id);
+    }
+    if (!targetOrder) {
+      targetOrder = await Order.findOne({ orderCode: id.toUpperCase().trim() });
+    }
+
+    if (!targetOrder) {
+      return res.status(404).json({ success: false, message: `Không tìm thấy đơn hàng ${id}` });
+    }
+
+    // Phân quyền: Employee chỉ được xem và tác động vào đơn SHOPPING!
+    const isSubOrder =
+      targetOrder.orderType === 'MEMBERSHIP' ||
+      targetOrder.items?.some(
+        (it) => it.type === 'subscription' || !it.productId || it.name?.includes('GÓI HỘI VIÊN')
+      );
+
+    if (req.user && req.user.role === 'employee' && isSubOrder) {
+      return res.status(403).json({
+        success: false,
+        message: 'Nhân viên không có quyền can thiệp vào đơn đăng ký Gói Hội Viên. Chỉ Admin mới có quyền duyệt gói!',
+      });
+    }
+
     const updater = req.user ? `${req.user.name} (${req.user.role})` : 'System';
-    const updatedOrder = await orderService.updateOrderStatus(id, status, updater, note);
+    const updatedOrder = await orderService.updateOrderStatus(targetOrder._id, status, updater, note);
 
     return res.json({
       success: true,
