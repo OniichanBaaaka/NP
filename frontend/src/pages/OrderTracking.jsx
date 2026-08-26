@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import {
   Search,
   Package,
@@ -330,7 +330,7 @@ export default function OrderTracking() {
           )}
 
           {/* Subscription Completed Banner (Kích Hoạt Thành Công) */}
-          {isSubscriptionOrder && order.orderStatus === 'completed' && (
+          {isSubscriptionOrder && (order.orderStatus === 'completed' || order.orderStatus === 'DELIVERED') && (
             <div
               style={{
                 backgroundColor: isDark ? 'rgba(6, 78, 59, 0.4)' : '#ecfdf5',
@@ -342,13 +342,13 @@ export default function OrderTracking() {
                 style={{ color: isDark ? '#6ee7b7' : '#065f46' }}
                 className="font-black text-sm sm:text-base flex items-center gap-2"
               >
-                <Crown className="w-5 h-5 text-amber-500 animate-bounce" /> 🎉 GÓI HỘI VIÊN ĐÃ ĐƯỢC ADMIN KÍCH HOẠT THÀNH CÔNG!
+                <Crown className="w-5 h-5 text-amber-500 animate-bounce" /> 🎉 GÓI HỘI VIÊN ĐÃ ĐƯỢC KÍCH HOẠT THÀNH CÔNG!
               </p>
               <p
                 style={{ color: isDark ? '#a7f3d0' : '#047857' }}
                 className="text-xs leading-relaxed font-bold"
               >
-                Chúc mừng bạn! Gói hội viên <strong>{order.items?.find(it => it.type === 'subscription')?.name || 'VIP'}</strong> đã được kích hoạt trực tiếp vào tài khoản của bạn. Mọi đặc quyền giảm giá độc quyền, mua drop sớm và voucher đã sẵn sàng áp dụng ngay khi bạn thanh toán đơn hàng tiếp theo!
+                Chúc mừng bạn! Gói hội viên <strong>{order.items?.find(it => it.type === 'subscription' || !it.productId || it.name?.includes('GÓI HỘI VIÊN'))?.name || 'VIP'}</strong> đã được kích hoạt trực tiếp vào tài khoản của bạn. Mọi đặc quyền giảm giá độc quyền, mua drop sớm và voucher đã sẵn sàng áp dụng ngay khi bạn thanh toán đơn hàng tiếp theo!
               </p>
             </div>
           )}
