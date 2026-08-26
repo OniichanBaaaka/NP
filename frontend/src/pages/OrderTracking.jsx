@@ -258,18 +258,39 @@ export default function OrderTracking() {
               </span>
             </div>
             <div className="flex items-center gap-3 flex-wrap">
-              {getStatusBadge(order.orderStatus)}
-              {order.orderStatus !== 'completed' && order.orderStatus !== 'cancelled' && (
-                <button
-                  onClick={handleConfirmReceived}
-                  disabled={confirming}
-                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-black text-xs flex items-center gap-1.5 shadow-md shadow-emerald-500/25 transition-all cursor-pointer disabled:opacity-50"
-                >
-                  <CheckCircle className="w-4 h-4" />
-                  {confirming ? 'Đang xác nhận...' : 'Đã nhận được hàng'}
-                </button>
+              {isSubscriptionOrder ? (
+                <span className="px-3.5 py-1.5 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-400 dark:border-amber-700 text-xs font-black flex items-center gap-1.5 shadow-sm">
+                  <Crown className="w-4 h-4 text-amber-500" /> Gói Hội Viên - Đã kích hoạt tự động
+                </span>
+              ) : (
+                getStatusBadge(order.orderStatus)
               )}
-              {order.paymentMethod === 'vietqr' && order.orderStatus === 'pending' && (
+
+              {!isSubscriptionOrder &&
+                order.orderStatus !== 'completed' &&
+                order.orderStatus !== 'DELIVERED' &&
+                order.orderStatus !== 'cancelled' &&
+                order.orderStatus !== 'CANCELLED' && (
+                  <button
+                    onClick={handleConfirmReceived}
+                    disabled={confirming}
+                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-black text-xs flex items-center gap-1.5 shadow-md shadow-emerald-500/25 transition-all cursor-pointer disabled:opacity-50"
+                  >
+                    <CheckCircle className="w-4 h-4" />
+                    {confirming ? 'Đang xác nhận...' : 'Đã nhận được hàng'}
+                  </button>
+                )}
+
+              {isSubscriptionOrder && (
+                <Link
+                  to="/membership"
+                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-rose-500 hover:from-amber-300 text-slate-950 font-black text-xs flex items-center gap-1.5 shadow-md shadow-amber-500/25 transition-all"
+                >
+                  <Crown className="w-4 h-4 fill-slate-950" /> Xem quyền lợi gói
+                </Link>
+              )}
+
+              {order.paymentMethod === 'vietqr' && order.orderStatus === 'pending' && !isSubscriptionOrder && (
                 <button
                   onClick={() => setShowQRModal(true)}
                   className="px-4 py-2 rounded-xl bg-gradient-to-r from-pink-600 to-rose-600 dark:from-cyan-500 dark:to-blue-600 text-white font-black text-xs flex items-center gap-1.5 hover:opacity-95 shadow-md shadow-pink-500/25"
