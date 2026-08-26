@@ -6,8 +6,9 @@ const { authenticate, optionalAuth, authorizeRoles } = require('../middlewares/a
 // Public tracking
 router.get('/track/:code', orderController.getOrderByCode);
 
-// Customer checkout (hỗ trợ cả khách đăng nhập và khách vãng lai)
+// Customer checkout (hỗ trợ cả /orders/checkout và /orders)
 router.post('/checkout', optionalAuth, orderController.createOrder);
+router.post('/', optionalAuth, orderController.createOrder);
 
 // Customer my orders
 router.get('/my-orders', authenticate, orderController.getMyOrders);
@@ -16,5 +17,6 @@ router.get('/my-orders', authenticate, orderController.getMyOrders);
 router.get('/', authenticate, authorizeRoles('employee', 'admin'), orderController.getAllOrders);
 router.get('/kpi/dashboard', authenticate, authorizeRoles('employee', 'admin'), orderController.getDashboardKPIs);
 router.patch('/:id/status', authenticate, authorizeRoles('employee', 'admin'), orderController.updateStatus);
+router.put('/:id/status', authenticate, authorizeRoles('employee', 'admin'), orderController.updateStatus);
 
 module.exports = router;

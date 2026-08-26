@@ -45,11 +45,11 @@ export const categoryAPI = {
 };
 
 export const orderAPI = {
-  checkout: (data) => api.post('/orders', data),
+  checkout: (data) => api.post('/orders/checkout', data),
   getMyOrders: () => api.get('/orders/my-orders'),
   getAll: (params) => api.get('/orders', { params }),
   getTracking: (code) => api.get(`/orders/track/${code}`),
-  updateStatus: (id, data) => api.put(`/orders/${id}/status`, data),
+  updateStatus: (id, data) => api.patch(`/orders/${id}/status`, data),
   getKPIs: () => api.get('/orders/kpi/dashboard'),
 };
 
