@@ -481,32 +481,24 @@ export default function EmployeeInventory() {
 
                       <td className="p-4">
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          {isSub && ord.orderStatus === 'pending' && (
-                            <button
-                              onClick={() => handleUpdateOrderStatus(ord.id, 'completed')}
-                              disabled={statusUpdating === ord.id}
-                              className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-extrabold text-xs shadow hover:scale-105 transition-all flex items-center gap-1"
-                            >
-                              <CheckCircle className="w-3.5 h-3.5" /> Duyệt tiền MB & Kích hoạt gói
-                            </button>
-                          )}
-
-                          {['pending', 'confirmed', 'delivering', 'completed', 'cancelled'].map(
-                            (st) => (
+                          {['PENDING', 'PROCESSING', 'SHIPPING', 'DELIVERED', 'CANCELLED'].map((st) => {
+                            const curSt = String(ord.orderStatus || ord.status || '').toUpperCase();
+                            const isCurrent = curSt === st;
+                            return (
                               <button
                                 key={st}
                                 onClick={() => handleUpdateOrderStatus(ord.id, st)}
-                                disabled={statusUpdating === ord.id || ord.orderStatus === st}
-                                className={`px-2 py-1 rounded-lg text-[10px] font-bold font-mono transition-all uppercase ${
-                                  ord.orderStatus === st
-                                    ? 'bg-slate-900 dark:bg-white text-white dark:text-black font-extrabold shadow-sm'
+                                disabled={statusUpdating === ord.id || isCurrent}
+                                className={`px-2.5 py-1 rounded-lg text-[10px] font-bold font-mono transition-all uppercase ${
+                                  isCurrent
+                                    ? 'bg-cyan-600 text-white font-black shadow-sm'
                                     : 'bg-slate-100 dark:bg-gray-900 hover:bg-slate-200 dark:hover:bg-gray-800 text-slate-600 dark:text-gray-400 border border-slate-200 dark:border-gray-800'
                                 }`}
                               >
-                                {st}
+                                {st === 'PENDING' ? 'Chờ duyệt' : st === 'PROCESSING' ? 'Đóng gói' : st === 'SHIPPING' ? 'Đang giao' : st === 'DELIVERED' ? 'Đã giao' : 'Hủy đơn'}
                               </button>
-                            )
-                          )}
+                            );
+                          })}
                         </div>
                       </td>
                     </tr>
