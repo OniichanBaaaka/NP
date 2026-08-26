@@ -235,16 +235,8 @@ export default function Membership() {
       const res = await orderAPI.checkout(orderPayload);
       if (res.data && res.data.success) {
         setCreatedOrder(res.data.order);
-        if (refreshUserData) {
-          await refreshUserData();
-        }
-        confetti({
-          particleCount: 120,
-          spread: 80,
-          origin: { y: 0.6 },
-        });
-        setSuccessPlanModal({ plan, order: res.data.order });
-        showToast(`🎉 Chúc mừng! Bạn đã đăng ký thành công ${plan.name}!`, 'success');
+        setShowPackageQR(true);
+        showToast(`🔔 Đã tạo đơn đăng ký #${res.data.order.orderCode}. Vui lòng chuyển khoản VietQR để Admin xác nhận!`, 'info');
       }
     } catch (err) {
       console.error('Failed to create subscription order:', err);

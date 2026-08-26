@@ -644,9 +644,15 @@ export default function Profile() {
                             #{order.orderCode}
                           </span>
                           {isOrderSubscription ? (
-                            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-black bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-500/40 shadow-sm">
-                              <Crown className="w-3.5 h-3.5 text-amber-500" /> GÓI HỘI VIÊN (ĐÃ KÍCH HOẠT TỰ ĐỘNG)
-                            </span>
+                            isOrdDelivered ? (
+                              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-black bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-500/40 shadow-sm">
+                                <Crown className="w-3.5 h-3.5 text-amber-500" /> GÓI HỘI VIÊN (ĐÃ KÍCH HOẠT)
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-black bg-amber-100 dark:bg-amber-500/20 text-amber-900 dark:text-amber-300 border border-amber-400 dark:border-amber-600 shadow-sm">
+                                <Clock className="w-3.5 h-3.5 text-amber-600" /> Chờ Admin duyệt thanh toán
+                              </span>
+                            )
                           ) : (
                             getStatusBadge(order.status || order.orderStatus)
                           )}
