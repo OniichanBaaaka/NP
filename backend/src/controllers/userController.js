@@ -9,6 +9,36 @@ async function getAllUsers(req, res) {
   }
 }
 
+/**
+ * Cập nhật thông tin hồ sơ của chính người dùng đang đăng nhập
+ */
+async function updateMyProfile(req, res) {
+  try {
+    const userId = req.user.id;
+    const { name, phone, address, avatar } = req.body;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'Người dùng không tồn tại' });
+    }
+
+    if (name) user.name = name.trim();
+    if (phone !== undefined) user.phone = phone.trim();
+    if (address !== undefined) user.address = address.trim();
+    if (avatar !== undefined) user.avatar = avatar.trim();
+
+    await user.save();
+
+    return res.json({
+      success: true,
+      message: 'Cập nhật thông tin hồ sơ cá nhân thành công!',
+      user,
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+}
+
 async function updateUserRole(req, res) {
   try {
     const { id } = req.params;
@@ -108,6 +138,7 @@ async function deleteUser(req, res) {
 
 module.exports = {
   getAllUsers,
+  updateMyProfile,
   updateUserRole,
   updateUserMembership,
   deleteUser,

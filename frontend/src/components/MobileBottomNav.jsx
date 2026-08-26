@@ -7,7 +7,7 @@ import { useAuth } from '../context/AuthContext';
 export default function MobileBottomNav() {
   const location = useLocation();
   const { cartCount, setIsCartOpen } = useCart();
-  const { currentTier, activePackage } = useAuth();
+  const { currentTier, activePackage, user } = useAuth();
 
   const navItems = [
     {
@@ -27,9 +27,9 @@ export default function MobileBottomNav() {
       badge: currentTier !== 'MEMBER' || (activePackage && activePackage !== 'NONE'),
     },
     {
-      label: 'Tra cứu',
-      to: '/order-tracking',
-      icon: Package,
+      label: user ? 'Hồ sơ' : 'Tài khoản',
+      to: user ? '/profile' : '/login',
+      icon: User,
     },
   ];
 

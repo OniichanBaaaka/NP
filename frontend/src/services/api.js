@@ -55,9 +55,17 @@ export const orderAPI = {
 
 export const userAPI = {
   getAll: () => api.get('/users'),
+  updateMyProfile: (data) => api.put('/users/profile/me', data),
   updateRole: (id, role) => api.put(`/users/${id}/role`, { role }),
   updateMembership: (id, data) => api.put(`/users/${id}/membership`, data),
   delete: (id) => api.delete(`/users/${id}`),
+};
+
+export const reviewAPI = {
+  getMyReviews: () => api.get('/reviews/my-reviews'),
+  getProductReviews: (productId) => api.get(`/reviews/product/${productId}`),
+  create: (data) => api.post('/reviews', data),
+  delete: (id) => api.delete(`/reviews/${id}`),
 };
 
 export const faqAPI = {

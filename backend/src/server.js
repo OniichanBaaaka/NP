@@ -28,6 +28,7 @@ app.use('/api/orders', require('./routes/orderRoutes'));
 app.use('/api/faqs', require('./routes/faqRoutes'));
 app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/cart', require('./routes/cartRoutes'));
+app.use('/api/reviews', require('./routes/reviewRoutes'));
 app.use('/api/ai', require('./routes/aiRoutes'));
 
 // Health check endpoint

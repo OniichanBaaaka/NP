@@ -6,6 +6,7 @@ const FAQ = require('./FAQ');
 const Cart = require('./Cart');
 const Wishlist = require('./Wishlist');
 const OTP = require('./OTP');
+const Review = require('./Review');
 
 module.exports = {
   User,
@@ -16,4 +17,5 @@ module.exports = {
   Cart,
   Wishlist,
   OTP,
+  Review,
 };

@@ -527,9 +527,25 @@ export default function Navbar() {
                     </div>
 
                     <div className="py-2 space-y-0.5">
-                      <Link to="/order-tracking" onClick={() => setIsProfileMenuOpen(false)}
+                      <Link to="/profile" onClick={() => setIsProfileMenuOpen(false)}
+                        className="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-950 dark:text-gray-200 hover:bg-pink-50 dark:hover:bg-gray-900 flex items-center gap-2">
+                        <User className="w-4 h-4 text-pink-500" /> Hồ sơ của tôi
+                      </Link>
+                      <Link to="/profile?tab=orders" onClick={() => setIsProfileMenuOpen(false)}
                         className="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-950 dark:text-gray-300 hover:bg-pink-50 dark:hover:bg-gray-900 flex items-center gap-2">
-                        <Package className="w-4 h-4 text-pink-500" /> Đơn hàng của tôi
+                        <Package className="w-4 h-4 text-cyan-400" /> Lịch sử mua hàng
+                      </Link>
+                      <Link to="/profile?tab=vouchers" onClick={() => setIsProfileMenuOpen(false)}
+                        className="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-950 dark:text-gray-300 hover:bg-pink-50 dark:hover:bg-gray-900 flex items-center gap-2">
+                        <Ticket className="w-4 h-4 text-amber-400" /> Kho Voucher & Ưu đãi
+                      </Link>
+                      <Link to="/profile?tab=reviews" onClick={() => setIsProfileMenuOpen(false)}
+                        className="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-950 dark:text-gray-300 hover:bg-pink-50 dark:hover:bg-gray-900 flex items-center gap-2">
+                        <Star className="w-4 h-4 text-yellow-400" /> Đánh giá mặt hàng
+                      </Link>
+                      <Link to="/profile?tab=support" onClick={() => setIsProfileMenuOpen(false)}
+                        className="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-950 dark:text-gray-300 hover:bg-pink-50 dark:hover:bg-gray-900 flex items-center gap-2">
+                        <Headphones className="w-4 h-4 text-purple-400" /> CSKH & Hỗ trợ 24/7
                       </Link>
                       {isAdmin && (
                         <Link to="/admin/dashboard" onClick={() => setIsProfileMenuOpen(false)}
