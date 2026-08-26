@@ -213,8 +213,16 @@ export default function AdminDashboard() {
     .filter((o) => (o.orderStatus || o.status) === 'DELIVERED')
     .reduce((acc, cur) => acc + (cur.finalAmount || cur.totalAmount || 0), 0);
 
-  const activeSubscriptionUsersCount = usersList.filter(
+  const activeSubscriptionUsersCount = (usersList || []).filter(
     (u) => u.activePackage && u.activePackage !== 'NONE'
+  ).length;
+
+  const pendingSubCount = (subscriptionOrders || []).filter(
+    (o) => (o.orderStatus || o.status) === 'PENDING'
+  ).length;
+
+  const pendingShopCount = (shoppingOrders || []).filter(
+    (o) => (o.orderStatus || o.status) === 'PENDING'
   ).length;
 
   if (loading && !kpis) {
