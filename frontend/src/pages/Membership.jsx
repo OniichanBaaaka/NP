@@ -470,6 +470,19 @@ export default function Membership() {
           </span>
         </div>
 
+        {/* Notice Banner: Admin Approval Requirement */}
+        <div className="p-5 sm:p-6 rounded-3xl bg-amber-50/90 dark:bg-amber-950/40 border-2 border-amber-300 dark:border-amber-500/50 shadow-lg space-y-2">
+          <div className="flex items-center gap-2 text-amber-900 dark:text-amber-300 font-black text-xs uppercase tracking-wider">
+            <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400" /> QUY TRÌNH KÍCH HOẠT GÓI HỘI VIÊN & DUYỆT TỪ ADMIN
+          </div>
+          <p className="text-xs sm:text-sm text-slate-800 dark:text-gray-200 leading-relaxed font-bold">
+            ⏳ <strong>Lưu ý:</strong> Sau khi bạn quét mã VietQR và chuyển khoản thành công, đơn đăng ký sẽ ở trạng thái <span className="text-amber-800 dark:text-amber-300 font-mono font-black">Chờ Admin duyệt</span>. Admin của XIV STUDIO sẽ kiểm tra số dư và kích hoạt quyền lợi gói vào tài khoản của bạn trong <strong>1 - 5 phút</strong>.
+          </p>
+          <p className="text-[11px] text-slate-600 dark:text-gray-400 font-medium">
+            🛡️ Admin có toàn quyền đối soát ngân hàng, duyệt kích hoạt, nâng cấp hoặc hủy/thu hồi gói hội viên nếu phát hiện thông tin không hợp lệ.
+          </p>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {paidPlans.map((plan) => {
             const isCurrentActive = activePackage === plan.id;

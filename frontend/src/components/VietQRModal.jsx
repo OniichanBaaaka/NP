@@ -194,6 +194,19 @@ export default function VietQRModal({ order, onClose }) {
           </div>
         </div>
 
+        {/* Subscription Notice */}
+        {order?.items?.some((i) => i.type === 'subscription' || !i.productId || i.name?.includes('GÓI HỘI VIÊN')) && (
+          <div className="mt-3 p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/50 border border-amber-300 dark:border-amber-700 text-[11px] text-amber-900 dark:text-amber-300 space-y-1">
+            <p className="font-bold flex items-center gap-1.5">
+              <Clock className="w-3.5 h-3.5 text-amber-600" />
+              Đăng ký Gói Hội Viên:
+            </p>
+            <p className="text-slate-700 dark:text-gray-300">
+              Sau khi bạn hoàn tất chuyển khoản, Admin sẽ kiểm tra biến động số dư và duyệt kích hoạt gói cho bạn trong <strong>1-5 phút</strong>!
+            </p>
+          </div>
+        )}
+
         {/* Security & Action Buttons */}
         <div className="mt-4 space-y-2.5">
           <div className="flex items-center justify-center gap-1.5 text-[11px] text-slate-500 dark:text-gray-400">

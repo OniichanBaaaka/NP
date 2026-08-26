@@ -24,9 +24,10 @@ export default function AdminDashboard() {
   const { user } = useAuth();
   const [kpis, setKpis] = useState(null);
   const [usersList, setUsersList] = useState([]);
+  const [ordersList, setOrdersList] = useState([]);
   const [categories, setCategories] = useState([]);
   const [faqs, setFaqs] = useState([]);
-  const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'users' | 'categories' | 'faqs'
+  const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'subscriptions' | 'users' | 'categories' | 'faqs'
   const [loading, setLoading] = useState(true);
 
   // AI Strategic Analysis State (UC010)
@@ -40,17 +41,19 @@ export default function AdminDashboard() {
     setLoading(true);
     setActionNotice({ type: '', message: '' });
     try {
-      const [kpiRes, userRes, catRes, faqRes] = await Promise.all([
+      const [kpiRes, userRes, catRes, faqRes, orderRes] = await Promise.all([
         orderAPI.getKPIs(),
         userAPI.getAll(),
         categoryAPI.getAll(),
         faqAPI.getAll(),
+        orderAPI.getAll(),
       ]);
 
       if (kpiRes.data.success) setKpis(kpiRes.data.kpis);
       if (userRes.data.success) setUsersList(userRes.data.users);
       if (catRes.data.success) setCategories(catRes.data.categories);
       if (faqRes.data.success) setFaqs(faqRes.data.faqs);
+      if (orderRes.data.success) setOrdersList(orderRes.data.orders);
     } catch (e) {
       console.error(e);
     } finally {
@@ -126,6 +129,65 @@ export default function AdminDashboard() {
       });
     }
   };
+
+  // Handle Admin Approve Subscription Order
+  const handleApproveSubscription = async (order) => {
+    const oId = order._id || order.id || order.orderCode;
+    try {
+      const res = await orderAPI.updateStatus(oId, 'DELIVERED', 'Admin đã duyệt thanh toán VietQR và kích hoạt gói hội viên');
+      if (res.data.success) {
+        setActionNotice({ type: 'success', message: `🎉 Đã duyệt và kích hoạt gói hội viên cho đơn #${order.orderCode}!` });
+        loadAdminData();
+      }
+    } catch (e) {
+      setActionNotice({
+        type: 'error',
+        message: e.response?.data?.message || 'Không thể duyệt đơn đăng ký gói',
+      });
+    }
+  };
+
+  // Handle Admin Cancel Subscription Order
+  const handleCancelSubscription = async (order) => {
+    const oId = order._id || order.id || order.orderCode;
+    if (!window.confirm(`Bạn có chắc chắn muốn hủy đơn đăng ký #${order.orderCode} không?`)) return;
+    try {
+      const res = await orderAPI.updateStatus(oId, 'CANCELLED', 'Admin hủy đơn do chưa nhận được thanh toán');
+      if (res.data.success) {
+        setActionNotice({ type: 'success', message: `Đã hủy đơn đăng ký #${order.orderCode}` });
+        loadAdminData();
+      }
+    } catch (e) {
+      setActionNotice({
+        type: 'error',
+        message: e.response?.data?.message || 'Không thể hủy đơn đăng ký gói',
+      });
+    }
+  };
+
+  // Handle Admin Revoke User Package
+  const handleRevokeUserPackage = async (userId, userName) => {
+    if (!window.confirm(`Bạn có chắc chắn muốn hủy gói hội viên và thu hồi đặc quyền của "${userName}" không?`)) return;
+    try {
+      const res = await userAPI.updateMembership(userId, { activePackage: 'NONE' });
+      if (res.data.success) {
+        setActionNotice({ type: 'success', message: `Đã thu hồi gói hội viên của ${userName} thành công!` });
+        loadAdminData();
+      }
+    } catch (e) {
+      setActionNotice({
+        type: 'error',
+        message: e.response?.data?.message || 'Không thể thu hồi gói hội viên',
+      });
+    }
+  };
+
+  const subscriptionOrders = (ordersList || []).filter((o) =>
+    (o.items || []).some(
+      (it) => it.type === 'subscription' || !it.productId || it.name?.includes('GÓI HỘI VIÊN')
+    )
+  );
+  const pendingSubCount = subscriptionOrders.filter((o) => (o.orderStatus || o.status) === 'PENDING').length;
 
   if (loading && !kpis) {
     return (
@@ -313,6 +375,12 @@ export default function AdminDashboard() {
       <div className="flex flex-wrap items-center gap-2 border-b border-pink-200 dark:border-gray-800 pb-3">
         {[
           { id: 'overview', label: 'Tổng quan & Top Bán Chạy' },
+          {
+            id: 'subscriptions',
+            label: `👑 Duyệt Đơn Gói Hội Viên ${
+              pendingSubCount > 0 ? `(${pendingSubCount} Chờ Duyệt)` : `(${subscriptionOrders.length})`
+            }`,
+          },
           { id: 'users', label: `Quản lý Người dùng (${usersList.length})` },
           { id: 'categories', label: `Danh mục BST (${categories.length})` },
           { id: 'faqs', label: `Câu hỏi FAQ & RAG (${faqs.length})` },
@@ -330,6 +398,125 @@ export default function AdminDashboard() {
           </button>
         ))}
       </div>
+
+      {/* Tab: Subscriptions Approval (Admin Duyệt hoặc Hủy đơn gói hội viên) */}
+      {activeTab === 'subscriptions' && (
+        <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-gray-950/80 border-2 border-pink-200 dark:border-gray-800 space-y-5 shadow-md">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-pink-100 dark:border-gray-800">
+            <div>
+              <h3 className="text-base font-black text-slate-950 dark:text-white uppercase tracking-wider font-heading flex items-center gap-2">
+                <Crown className="w-5 h-5 text-amber-500" /> Quản Lý & Duyệt Đơn Đăng Ký Gói Hội Viên
+              </h3>
+              <p className="text-xs text-slate-600 dark:text-gray-400 font-medium">
+                Admin kiểm tra tiền về tài khoản ngân hàng MB Bank (5100101042006 • VU DUC DAT) rồi bấm Duyệt để kích hoạt gói hội viên cho khách hàng.
+              </p>
+            </div>
+            <button
+              onClick={loadAdminData}
+              className="px-4 py-2 rounded-xl bg-pink-50 dark:bg-gray-900 border border-pink-200 dark:border-gray-800 text-xs font-black text-pink-600 dark:text-pink-400 flex items-center gap-1.5 hover:bg-pink-100 transition-all self-start"
+            >
+              <RefreshCw className="w-3.5 h-3.5" /> Làm mới
+            </button>
+          </div>
+
+          {subscriptionOrders.length === 0 ? (
+            <div className="text-center py-12 space-y-2 text-slate-500 dark:text-gray-400 text-xs">
+              <Crown className="w-10 h-10 text-amber-500/40 mx-auto" />
+              <p className="font-bold">Chưa có đơn đăng ký gói hội viên nào trong hệ thống.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="border-b border-pink-200 dark:border-gray-800 text-slate-600 dark:text-gray-400 font-mono uppercase text-[10px] font-black">
+                  <tr>
+                    <th className="py-3 px-2">Mã đơn</th>
+                    <th className="py-3 px-2">Khách hàng</th>
+                    <th className="py-3 px-2">Gói đăng ký</th>
+                    <th className="py-3 px-2">Số tiền</th>
+                    <th className="py-3 px-2">Thời gian</th>
+                    <th className="py-3 px-2">Trạng thái</th>
+                    <th className="py-3 px-2 text-right">Hành động của Admin</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-pink-100 dark:divide-gray-800">
+                  {subscriptionOrders.map((ord) => {
+                    const subItem = ord.items?.find((it) => it.type === 'subscription' || !it.productId || it.name?.includes('GÓI HỘI VIÊN'));
+                    const isPending = (ord.orderStatus || ord.status) === 'PENDING';
+                    const isDelivered = (ord.orderStatus || ord.status) === 'DELIVERED';
+                    const isCancelled = (ord.orderStatus || ord.status) === 'CANCELLED';
+
+                    return (
+                      <tr key={ord.id || ord._id} className="hover:bg-pink-50/60 dark:hover:bg-gray-900/50">
+                        <td className="py-3 px-2 font-mono font-black text-pink-600 dark:text-cyan-400">
+                          #{ord.orderCode}
+                        </td>
+                        <td className="py-3 px-2">
+                          <span className="font-black text-slate-900 dark:text-white block">{ord.customerName || ord.customerInfo?.name}</span>
+                          <span className="text-[11px] text-slate-500 dark:text-gray-400 font-mono block">{ord.customerPhone || ord.customerInfo?.phone} • {ord.customerEmail || ord.customerInfo?.email}</span>
+                        </td>
+                        <td className="py-3 px-2">
+                          <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-purple-100 dark:bg-purple-950 text-purple-800 dark:text-purple-300 border border-purple-300 dark:border-purple-800">
+                            {subItem?.name || subItem?.size || 'GÓI HỘI VIÊN'}
+                          </span>
+                        </td>
+                        <td className="py-3 px-2 font-mono font-black text-slate-900 dark:text-white">
+                          {(ord.finalAmount || ord.totalAmount || subItem?.price || 0).toLocaleString('vi-VN')}đ
+                        </td>
+                        <td className="py-3 px-2 text-[11px] text-slate-500 dark:text-gray-400 font-mono">
+                          {new Date(ord.createdAt).toLocaleString('vi-VN')}
+                        </td>
+                        <td className="py-3 px-2">
+                          {isDelivered ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700">
+                              <CheckCircle className="w-3.5 h-3.5 text-emerald-600" /> Đã kích hoạt
+                            </span>
+                          ) : isCancelled ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 border border-rose-300 dark:border-rose-700">
+                              Đã hủy
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700 animate-pulse">
+                              <Clock className="w-3.5 h-3.5 text-amber-600" /> Chờ Admin duyệt
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-3 px-2 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            {isPending && (
+                              <>
+                                <button
+                                  onClick={() => handleApproveSubscription(ord)}
+                                  className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 text-white font-black text-xs shadow-md shadow-emerald-500/20 transition-all flex items-center gap-1 cursor-pointer"
+                                >
+                                  <CheckCircle className="w-3.5 h-3.5" /> Duyệt & Cấp gói
+                                </button>
+                                <button
+                                  onClick={() => handleCancelSubscription(ord)}
+                                  className="px-3 py-1.5 rounded-xl bg-rose-100 dark:bg-red-950 hover:bg-rose-200 text-rose-700 dark:text-red-300 font-bold text-xs transition-colors cursor-pointer"
+                                >
+                                  Hủy
+                                </button>
+                              </>
+                            )}
+                            {isDelivered && ord.userId && (
+                              <button
+                                onClick={() => handleRevokeUserPackage(ord.userId, ord.customerName || ord.customerInfo?.name)}
+                                className="px-3 py-1.5 rounded-xl bg-rose-50 dark:bg-red-950/60 hover:bg-rose-100 text-rose-600 dark:text-red-400 font-bold text-[11px] border border-rose-200 dark:border-red-900 transition-colors"
+                              >
+                                Thu hồi gói
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Tab: Overview (Top Products & Revenue Distribution) */}
       {activeTab === 'overview' && (
@@ -469,13 +656,32 @@ export default function AdminDashboard() {
                       </select>
                     </td>
                     <td className="py-3 px-2 text-right">
-                      <button
-                        onClick={() => handleDeleteUser(u.id, u.name)}
-                        className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 dark:hover:bg-red-950 transition-colors"
-                        title="Xóa tài khoản"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <div className="flex items-center justify-end gap-1.5">
+                        {u.activePackage && u.activePackage !== 'NONE' ? (
+                          <button
+                            onClick={() => handleRevokeUserPackage(u.id, u.name)}
+                            className="px-2 py-1 rounded bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 hover:bg-rose-200 text-[10px] font-bold transition-colors"
+                            title="Hủy/Thu hồi gói hội viên"
+                          >
+                            Hủy gói
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleChangeUserMembership(u.id, { activePackage: 'VIP' })}
+                            className="px-2 py-1 rounded bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 hover:bg-amber-200 text-[10px] font-bold transition-colors"
+                            title="Cấp nhanh gói VIP"
+                          >
+                            + Cấp VIP
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleDeleteUser(u.id, u.name)}
+                          className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 dark:hover:bg-red-950 transition-colors"
+                          title="Xóa tài khoản"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
