@@ -175,9 +175,9 @@ export default function Navbar() {
 
               {/* Desktop Nav links — smoothly shrink & fade out when search expands */}
               <nav
-                className="hidden lg:flex items-center gap-4 xl:gap-5 text-sm font-black overflow-hidden whitespace-nowrap"
+                className="hidden lg:flex items-center gap-3.5 xl:gap-5 text-sm font-black overflow-hidden whitespace-nowrap"
                 style={{
-                  maxWidth: isSearchExpanded ? '0px' : '480px',
+                  maxWidth: isSearchExpanded ? '0px' : '750px',
                   opacity: isSearchExpanded ? 0 : 1,
                   transform: isSearchExpanded ? 'translateX(-10px)' : 'translateX(0)',
                   pointerEvents: isSearchExpanded ? 'none' : 'auto',
@@ -197,13 +197,13 @@ export default function Navbar() {
                   <Package className="w-3.5 h-3.5 text-pink-500" /> Tra cứu đơn
                 </Link>
                 {isEmployee && (
-                  <Link to="/employee/inventory" className="px-2 py-1 rounded-lg bg-pink-100 dark:bg-blue-950/80 text-pink-800 dark:text-blue-300 border border-pink-300 dark:border-blue-800/80 hover:bg-pink-200 transition-all text-xs font-bold flex items-center gap-1 whitespace-nowrap">
-                    <Layers className="w-3 h-3" /> Kho & Đơn
+                  <Link to="/employee/inventory" className="px-2.5 py-1 rounded-lg bg-pink-100 dark:bg-blue-950/80 text-pink-800 dark:text-blue-300 border border-pink-300 dark:border-blue-800/80 hover:bg-pink-200 transition-all text-xs font-bold flex items-center gap-1 whitespace-nowrap flex-shrink-0">
+                    <Layers className="w-3.5 h-3.5" /> Kho & Đơn
                   </Link>
                 )}
                 {isAdmin && (
-                  <Link to="/admin/dashboard" className="px-2 py-1 rounded-lg bg-purple-100 dark:bg-pink-950/80 text-purple-800 dark:text-pink-300 border border-purple-300 dark:border-pink-800/80 hover:bg-purple-200 transition-all text-xs font-bold flex items-center gap-1 whitespace-nowrap">
-                    <Shield className="w-3 h-3" /> Admin
+                  <Link to="/admin/dashboard" className="px-2.5 py-1 rounded-lg bg-purple-100 dark:bg-pink-950/80 text-purple-800 dark:text-pink-300 border border-purple-300 dark:border-pink-800/80 hover:bg-purple-200 transition-all text-xs font-bold flex items-center gap-1 whitespace-nowrap flex-shrink-0">
+                    <Shield className="w-3.5 h-3.5" /> Admin
                   </Link>
                 )}
               </nav>
