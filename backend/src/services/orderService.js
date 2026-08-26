@@ -286,8 +286,13 @@ function formatOrderRecord(order) {
     };
   }
 
+  const rawStatus = (doc.orderStatus || doc.status || 'PENDING').toUpperCase();
+
   return {
     ...doc,
+    id: doc._id ? String(doc._id) : doc.id,
+    status: rawStatus,
+    orderStatus: rawStatus,
     customerInfo: {
       name: doc.customerName,
       email: doc.customerEmail,
