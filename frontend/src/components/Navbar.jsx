@@ -196,14 +196,20 @@ export default function Navbar() {
                 <Link to="/order-tracking" className="text-slate-950 dark:text-gray-300 hover:text-pink-600 dark:hover:text-cyan-400 transition-colors flex items-center gap-1 whitespace-nowrap">
                   <Package className="w-3.5 h-3.5 text-pink-500" /> Tra cứu đơn
                 </Link>
-                {isEmployee && (
-                  <Link to="/employee/inventory" className="px-2.5 py-1 rounded-lg bg-pink-100 dark:bg-blue-950/80 text-pink-800 dark:text-blue-300 border border-pink-300 dark:border-blue-800/80 hover:bg-pink-200 transition-all text-xs font-bold flex items-center gap-1 whitespace-nowrap flex-shrink-0">
-                    <Layers className="w-3.5 h-3.5" /> Kho & Đơn
+                {user?.role === 'employee' && (
+                  <Link
+                    to="/employee/inventory"
+                    className="px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/80 text-blue-800 dark:text-blue-300 border border-blue-300 dark:border-blue-800 hover:bg-blue-100 transition-all text-xs font-black flex items-center gap-1.5 whitespace-nowrap flex-shrink-0"
+                  >
+                    <Layers className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" /> Kho & Đơn Hàng
                   </Link>
                 )}
-                {isAdmin && (
-                  <Link to="/admin/dashboard" className="px-2.5 py-1 rounded-lg bg-purple-100 dark:bg-pink-950/80 text-purple-800 dark:text-pink-300 border border-purple-300 dark:border-pink-800/80 hover:bg-purple-200 transition-all text-xs font-bold flex items-center gap-1 whitespace-nowrap flex-shrink-0">
-                    <Shield className="w-3.5 h-3.5" /> Admin
+                {user?.role === 'admin' && (
+                  <Link
+                    to="/admin/dashboard"
+                    className="px-3 py-1.5 rounded-xl bg-purple-50 dark:bg-purple-950/80 text-purple-800 dark:text-purple-300 border border-purple-300 dark:border-purple-800 hover:bg-purple-100 transition-all text-xs font-black flex items-center gap-1.5 whitespace-nowrap flex-shrink-0"
+                  >
+                    <Shield className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" /> Bảng Quản Trị Admin
                   </Link>
                 )}
               </nav>
@@ -641,16 +647,16 @@ export default function Navbar() {
                   {label}
                 </Link>
               ))}
-              {isEmployee && (
+              {user?.role === 'employee' && (
                 <Link to="/employee/inventory" onClick={() => setIsMobileMenuOpen(false)}
-                  className="p-2.5 rounded-xl bg-pink-100 text-pink-800 text-xs flex items-center gap-2">
-                  <Layers className="w-4 h-4" /> Quản lý kho
+                  className="p-2.5 rounded-xl bg-blue-100 text-blue-900 text-xs font-bold flex items-center gap-2">
+                  <Layers className="w-4 h-4 text-blue-600" /> Quản lý Kho & Đơn Hàng Mua Sắm
                 </Link>
               )}
-              {isAdmin && (
+              {user?.role === 'admin' && (
                 <Link to="/admin/dashboard" onClick={() => setIsMobileMenuOpen(false)}
-                  className="p-2.5 rounded-xl bg-purple-100 text-purple-800 text-xs flex items-center gap-2">
-                  <Shield className="w-4 h-4" /> Bảng điều khiển Admin
+                  className="p-2.5 rounded-xl bg-purple-100 text-purple-900 text-xs font-bold flex items-center gap-2">
+                  <Shield className="w-4 h-4 text-purple-600" /> Bảng Quản Trị Admin
                 </Link>
               )}
             </div>
