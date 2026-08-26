@@ -31,6 +31,8 @@ import {
   ShieldCheck,
   Bot,
   Send,
+  LogIn,
+  Layers,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { orderAPI, reviewAPI, faqAPI, userAPI, authAPI } from '../services/api';
@@ -38,17 +40,18 @@ import MembershipBadge from '../components/MembershipBadge';
 
 export default function Profile() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const initialTab = searchParams.get('tab') || 'orders';
-  const [activeTab, setActiveTab] = useState(initialTab);
+  const tabFromUrl = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState(tabFromUrl || 'orders');
 
   const {
     user,
+    loading: authLoading,
     refreshUserData,
-    currentTier,
-    userSpending,
-    tierDiscountRate,
-    nextTierRemaining,
-    nextTierProgress,
+    currentTier = 'MEMBER',
+    userSpending = 0,
+    tierDiscountRate = 0,
+    nextTierRemaining = 0,
+    nextTierProgress = 0,
   } = useAuth();
   const navigate = useNavigate();
 
@@ -82,10 +85,10 @@ export default function Profile() {
 
   // Account Settings State
   const [profileForm, setProfileForm] = useState({
-    name: user?.name || '',
-    phone: user?.phone || '',
-    address: user?.address || '',
-    avatar: user?.avatar || '',
+    name: '',
+    phone: '',
+    address: '',
+    avatar: '',
   });
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileSuccess, setProfileSuccess] = useState('');
@@ -103,9 +106,18 @@ export default function Profile() {
   const [changePassMsg, setChangePassMsg] = useState('');
   const [changePassError, setChangePassError] = useState('');
 
+  // Sync tab from URL if changed
   useEffect(() => {
-    setSearchParams({ tab: activeTab });
-  }, [activeTab]);
+    if (tabFromUrl && tabFromUrl !== activeTab) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [tabFromUrl]);
+
+  // Handle Tab Switch
+  const handleTabChange = (tabId) => {
+    setActiveTab(tabId);
+    setSearchParams({ tab: tabId });
+  };
 
   useEffect(() => {
     if (user) {
@@ -115,21 +127,17 @@ export default function Profile() {
         address: user.address || '',
         avatar: user.avatar || '',
       });
+      loadOrders();
+      loadReviews();
     }
-  }, [user]);
-
-  // Load Data
-  useEffect(() => {
-    loadOrders();
-    loadReviews();
     loadFaqs();
-  }, []);
+  }, [user]);
 
   const loadOrders = async () => {
     setOrdersLoading(true);
     try {
       const res = await orderAPI.getMyOrders();
-      if (res.data.success) {
+      if (res.data && res.data.success) {
         setOrders(res.data.orders || []);
       }
     } catch (e) {
@@ -143,7 +151,7 @@ export default function Profile() {
     setReviewsLoading(true);
     try {
       const res = await reviewAPI.getMyReviews();
-      if (res.data.success) {
+      if (res.data && res.data.success) {
         setMyReviews(res.data.reviews || []);
       }
     } catch (e) {
@@ -156,7 +164,7 @@ export default function Profile() {
   const loadFaqs = async () => {
     try {
       const res = await faqAPI.getAll();
-      if (res.data.success) {
+      if (res.data && res.data.success) {
         setFaqs(res.data.faqs || []);
       }
     } catch (e) {
@@ -170,7 +178,6 @@ export default function Profile() {
     setTimeout(() => setCopiedCode(''), 2500);
   };
 
-  // Open Review Modal for a specific purchased product
   const handleOpenReviewModal = (product, orderCode) => {
     setReviewForm({
       productId: product.productId || product._id || product.id,
@@ -191,10 +198,10 @@ export default function Profile() {
     setSubmittingReview(true);
     try {
       const res = await reviewAPI.create(reviewForm);
-      if (res.data.success) {
+      if (res.data && res.data.success) {
         setIsReviewModalOpen(false);
         await loadReviews();
-        setActiveTab('reviews');
+        handleTabChange('reviews');
       }
     } catch (err) {
       alert(err.response?.data?.message || 'Gửi đánh giá thất bại');
@@ -203,7 +210,6 @@ export default function Profile() {
     }
   };
 
-  // Update Profile
   const handleSaveProfile = async (e) => {
     e.preventDefault();
     setProfileSaving(true);
@@ -211,7 +217,7 @@ export default function Profile() {
     setProfileError('');
     try {
       const res = await userAPI.updateMyProfile(profileForm);
-      if (res.data.success) {
+      if (res.data && res.data.success) {
         setProfileSuccess('Cập nhật hồ sơ cá nhân thành công!');
         await refreshUserData();
         setTimeout(() => setProfileSuccess(''), 3000);
@@ -223,14 +229,13 @@ export default function Profile() {
     }
   };
 
-  // Change Password - Send OTP
   const handleSendChangePassOtp = async () => {
     setChangePassLoading(true);
     setChangePassError('');
     setChangePassMsg('');
     try {
       const res = await authAPI.changePasswordSendOtp();
-      if (res.data.success) {
+      if (res.data && res.data.success) {
         setChangePassMsg(res.data.message);
         setChangePassStep(2);
       }
@@ -241,7 +246,6 @@ export default function Profile() {
     }
   };
 
-  // Change Password - Submit
   const handleChangePassword = async (e) => {
     e.preventDefault();
     if (changePassForm.newPassword !== changePassForm.confirmPassword) {
@@ -257,7 +261,7 @@ export default function Profile() {
         newPassword: changePassForm.newPassword,
         otp: changePassForm.otp,
       });
-      if (res.data.success) {
+      if (res.data && res.data.success) {
         setChangePassMsg('Đổi mật khẩu thành công!');
         setChangePassForm({ oldPassword: '', newPassword: '', confirmPassword: '', otp: '' });
         setChangePassStep(1);
@@ -269,17 +273,63 @@ export default function Profile() {
     }
   };
 
-  // Filter Orders
+  // If loading authentication state
+  if (authLoading) {
+    return (
+      <div className="min-h-[70vh] flex items-center justify-center">
+        <div className="text-center space-y-3">
+          <RefreshCw className="w-8 h-8 text-pink-500 animate-spin mx-auto" />
+          <p className="text-xs text-gray-400 font-mono">Đang tải hồ sơ người dùng...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If user is not logged in, show Guest / Login Prompt
+  if (!user) {
+    return (
+      <div className="min-h-[70vh] flex items-center justify-center px-4 py-12">
+        <div className="max-w-md w-full p-8 rounded-3xl bg-gray-950/90 border border-gray-800 text-center space-y-5 shadow-2xl">
+          <div className="w-16 h-16 rounded-2xl bg-pink-500/10 border border-pink-500/30 flex items-center justify-center text-pink-400 mx-auto">
+            <User className="w-8 h-8" />
+          </div>
+          <div className="space-y-1">
+            <h2 className="text-2xl font-black text-white font-heading">
+              BẠN CHƯA ĐĂNG NHẬP
+            </h2>
+            <p className="text-xs text-gray-400 leading-relaxed">
+              Vui lòng đăng nhập để xem lịch sử mua hàng, kho voucher, đánh giá sản phẩm và quản lý thông tin tài khoản cá nhân.
+            </p>
+          </div>
+
+          <div className="pt-2 space-y-2.5">
+            <Link
+              to="/login"
+              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-pink-500 via-rose-500 to-cyan-500 hover:from-pink-400 text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-lg shadow-pink-500/25 transition-all"
+            >
+              <LogIn className="w-4 h-4" /> Đăng nhập ngay
+            </Link>
+            <Link
+              to="/register"
+              className="w-full py-2.5 rounded-xl bg-gray-900 hover:bg-gray-800 border border-gray-800 text-gray-300 font-bold text-xs flex items-center justify-center transition-colors"
+            >
+              Tạo tài khoản mới
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const filteredOrders = orders.filter((o) => {
     if (orderFilter === 'ALL') return true;
     return o.status === orderFilter;
   });
 
-  // Filter FAQs
   const filteredFaqs = faqs.filter(
     (f) =>
-      f.question.toLowerCase().includes(faqSearch.toLowerCase()) ||
-      f.answer.toLowerCase().includes(faqSearch.toLowerCase())
+      (f.question && f.question.toLowerCase().includes(faqSearch.toLowerCase())) ||
+      (f.answer && f.answer.toLowerCase().includes(faqSearch.toLowerCase()))
   );
 
   const voucherList = [
@@ -343,7 +393,7 @@ export default function Profile() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-fade-in">
       {/* Top Banner: User Profile Overview */}
       <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-gray-900 via-gray-950 to-gray-900 border border-gray-800 shadow-2xl relative overflow-hidden">
         <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-pink-500/10 via-cyan-500/10 to-transparent blur-3xl pointer-events-none" />
@@ -410,7 +460,7 @@ export default function Profile() {
           return (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => handleTabChange(tab.id)}
               className={`flex items-center gap-2 px-5 py-3 rounded-2xl font-bold text-xs sm:text-sm whitespace-nowrap transition-all cursor-pointer ${
                 isActive
                   ? 'bg-gradient-to-r from-pink-500 to-rose-600 dark:from-cyan-500 dark:to-blue-600 text-white shadow-lg shadow-pink-500/20'
@@ -436,7 +486,6 @@ export default function Profile() {
       {/* TAB 1: LỊCH SỬ HÀNG ĐÃ MUA */}
       {activeTab === 'orders' && (
         <div className="space-y-6">
-          {/* Order Status Filters */}
           <div className="flex items-center gap-2 overflow-x-auto pb-2">
             {[
               { key: 'ALL', label: 'Tất cả đơn' },
@@ -460,7 +509,6 @@ export default function Profile() {
             ))}
           </div>
 
-          {/* Orders List */}
           {ordersLoading ? (
             <div className="text-center py-16">
               <RefreshCw className="w-8 h-8 text-pink-500 animate-spin mx-auto mb-3" />
@@ -489,7 +537,6 @@ export default function Profile() {
                   key={order._id || order.id}
                   className="p-5 sm:p-6 rounded-3xl bg-gray-950/90 border border-gray-800 shadow-xl space-y-4 hover:border-gray-700 transition-all"
                 >
-                  {/* Order Header */}
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-gray-800/80">
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
@@ -513,7 +560,6 @@ export default function Profile() {
                     </div>
                   </div>
 
-                  {/* Items List */}
                   <div className="space-y-3">
                     {order.items?.map((item, idx) => (
                       <div key={idx} className="flex items-center justify-between gap-4">
@@ -538,7 +584,6 @@ export default function Profile() {
                           </div>
                         </div>
 
-                        {/* Review Button for Delivered items */}
                         {order.status === 'DELIVERED' && (
                           <button
                             onClick={() => handleOpenReviewModal(item, order.orderCode)}
@@ -551,7 +596,6 @@ export default function Profile() {
                     ))}
                   </div>
 
-                  {/* Order Footer Total */}
                   <div className="pt-3 border-t border-gray-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
                     <span className="text-gray-400">
                       Phương thức: <strong className="text-gray-200">{order.paymentMethod === 'VIETQR' ? 'VietQR Napas 247' : 'COD (Tiền mặt)'}</strong>
@@ -578,7 +622,7 @@ export default function Profile() {
               <Sparkles className="w-4 h-4" /> Đặc quyền hội viên {currentTier}
             </div>
             <h3 className="text-xl font-extrabold text-white">
-              Bạn đang được giảm tự động {(tierDiscountRate * 100).toFixed(0)}% trên mọi đơn hàng!
+              Bạn đang được giảm tự động {(((tierDiscountRate || 0)) * 100).toFixed(0)}% trên mọi đơn hàng!
             </h3>
             <p className="text-xs text-gray-300 max-w-xl">
               Càng mua sắm nhiều, cấp bậc hội viên càng tăng cao. Sử dụng thêm các mã voucher giảm giá bên dưới để nhận ưu đãi kép không giới hạn.
@@ -711,7 +755,6 @@ export default function Profile() {
       {/* TAB 4: CHĂM SÓC KHÁCH HÀNG & TRỢ GIÚP 24/7 */}
       {activeTab === 'support' && (
         <div className="space-y-8">
-          {/* Support Hotline Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="p-6 rounded-3xl bg-gray-950/90 border border-gray-800 space-y-3">
               <div className="w-10 h-10 rounded-2xl bg-pink-500/10 border border-pink-500/30 flex items-center justify-center text-pink-400">
@@ -756,9 +799,7 @@ export default function Profile() {
             </div>
           </div>
 
-          {/* AI Assistant Quick Connect & Warranty Policy */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* AI Shopping Assistant */}
             <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-gray-900 via-gray-950 to-gray-900 border border-cyan-500/30 space-y-4 relative overflow-hidden">
               <div className="flex items-center gap-2 text-cyan-400 font-bold text-xs uppercase tracking-wider">
                 <Bot className="w-4 h-4" /> Trợ lý ảo AI Thông minh 24/7
@@ -774,7 +815,6 @@ export default function Profile() {
               </p>
             </div>
 
-            {/* Warranty & Return Policy */}
             <div className="p-6 sm:p-8 rounded-3xl bg-gray-950/90 border border-gray-800 space-y-4">
               <div className="flex items-center gap-2 text-pink-400 font-bold text-xs uppercase tracking-wider">
                 <RotateCcw className="w-4 h-4" /> Chính sách đổi trả & bảo hành
@@ -796,7 +836,6 @@ export default function Profile() {
             </div>
           </div>
 
-          {/* Interactive FAQ Search */}
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <h3 className="text-lg font-bold text-white font-heading">
@@ -845,7 +884,6 @@ export default function Profile() {
       {/* TAB 5: HỒ SƠ & BẢO MẬT */}
       {activeTab === 'account' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Profile Info Form */}
           <div className="p-6 sm:p-8 rounded-3xl bg-gray-950/90 border border-gray-800 space-y-5 shadow-xl">
             <h3 className="text-base font-bold text-white font-heading flex items-center gap-2">
               <User className="w-4 h-4 text-pink-400" /> THÔNG TIN CÁ NHÂN
@@ -930,7 +968,6 @@ export default function Profile() {
             </form>
           </div>
 
-          {/* Change Password Form (with Gmail OTP) */}
           <div className="p-6 sm:p-8 rounded-3xl bg-gray-950/90 border border-gray-800 space-y-5 shadow-xl">
             <h3 className="text-base font-bold text-white font-heading flex items-center gap-2">
               <Lock className="w-4 h-4 text-cyan-400" /> ĐỔI MẬT KHẨU (GMAIL OTP)
@@ -1076,7 +1113,6 @@ export default function Profile() {
             </div>
 
             <form onSubmit={handleSubmitReview} className="space-y-4 text-xs">
-              {/* Star Selector */}
               <div className="space-y-1.5 text-center">
                 <label className="text-gray-300 font-bold block">Chất lượng sản phẩm</label>
                 <div className="flex items-center justify-center gap-2 py-1">
@@ -1099,7 +1135,6 @@ export default function Profile() {
                 </div>
               </div>
 
-              {/* Fit Evaluation */}
               <div className="space-y-1">
                 <label className="text-gray-300 font-bold">Độ vừa vặn của form dáng:</label>
                 <div className="grid grid-cols-3 gap-2">
@@ -1120,7 +1155,6 @@ export default function Profile() {
                 </div>
               </div>
 
-              {/* Comment text */}
               <div className="space-y-1">
                 <label className="text-gray-300 font-bold">Nhận xét chi tiết *</label>
                 <textarea
