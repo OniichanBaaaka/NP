@@ -21,6 +21,7 @@ import {
   HeartHandshake,
   RotateCcw,
   Sparkle,
+  AlertCircle,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useNavigate } from 'react-router-dom';
