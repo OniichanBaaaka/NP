@@ -207,13 +207,31 @@ export default function AdminDashboard() {
     }
   };
 
-  const shoppingOrders = (ordersList || []).filter((o) =>
-    o.orderType === 'SHOPPING' || (!o.orderType && !o.items?.some((it) => it.type === 'subscription' || !it.productId || it.name?.includes('GÓI HỘI VIÊN')))
-  );
+  const subscriptionOrders = (ordersList || []).filter((o) => {
+    if (o.orderType === 'MEMBERSHIP') return true;
+    if (o.items && Array.isArray(o.items)) {
+      return o.items.some(
+        (it) =>
+          it.type === 'subscription' ||
+          it.itemType === 'subscription' ||
+          !it.productId ||
+          (it.name && it.name.toUpperCase().includes('HỘI VIÊN')) ||
+          (it.name && it.name.toUpperCase().includes('GÓI')) ||
+          (it.sku && it.sku.includes('SUB'))
+      );
+    }
+    return false;
+  });
 
-  const subscriptionOrders = (ordersList || []).filter((o) =>
-    o.orderType === 'MEMBERSHIP' || o.items?.some((it) => it.type === 'subscription' || !it.productId || it.name?.includes('GÓI HỘI VIÊN'))
-  );
+  const shoppingOrders = (ordersList || []).filter((o) => {
+    return !subscriptionOrders.some(
+      (sub) =>
+        (sub.id && sub.id === o.id) ||
+        (sub._id && sub._id === o._id) ||
+        (sub.orderCode && sub.orderCode === o.orderCode)
+    );
+  });
+
   const totalSubscriptionRevenue = subscriptionOrders
     .filter((o) => (o.orderStatus || o.status) === 'DELIVERED')
     .reduce((acc, cur) => acc + (cur.finalAmount || cur.totalAmount || 0), 0);
@@ -310,7 +328,14 @@ export default function AdminDashboard() {
       {/* KPI Cards Grid: Separating Subscriptions vs Shopping */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4">
         {/* KPI 1: Subscription Orders Count */}
-        <div className="p-4 rounded-2xl bg-amber-50/80 dark:bg-amber-950/40 border-2 border-amber-300 dark:border-amber-700 shadow-sm space-y-1">
+        <div
+          onClick={() => setActiveTab('subscriptions')}
+          className={`p-4 rounded-2xl border-2 shadow-sm space-y-1 cursor-pointer transition-all hover:scale-[1.03] hover:shadow-md ${
+            activeTab === 'subscriptions'
+              ? 'bg-amber-100/90 dark:bg-amber-950/80 border-amber-500 ring-2 ring-amber-400/40'
+              : 'bg-amber-50/80 dark:bg-amber-950/40 border-amber-300 dark:border-amber-700'
+          }`}
+        >
           <div className="flex items-center justify-between">
             <span className="text-[10px] text-amber-800 dark:text-amber-300 uppercase font-mono font-bold">
               👑 Lượt mua Gói
@@ -326,7 +351,14 @@ export default function AdminDashboard() {
         </div>
 
         {/* KPI 2: Subscription Revenue */}
-        <div className="p-4 rounded-2xl bg-purple-50/80 dark:bg-purple-950/40 border-2 border-purple-300 dark:border-purple-700 shadow-sm space-y-1">
+        <div
+          onClick={() => setActiveTab('subscriptions')}
+          className={`p-4 rounded-2xl border-2 shadow-sm space-y-1 cursor-pointer transition-all hover:scale-[1.03] hover:shadow-md ${
+            activeTab === 'subscriptions'
+              ? 'bg-purple-100/90 dark:bg-purple-950/80 border-purple-500 ring-2 ring-purple-400/40'
+              : 'bg-purple-50/80 dark:bg-purple-950/40 border-purple-300 dark:border-purple-700'
+          }`}
+        >
           <div className="flex items-center justify-between">
             <span className="text-[10px] text-purple-800 dark:text-purple-300 uppercase font-mono font-bold">
               💰 Doanh thu Gói
@@ -342,7 +374,14 @@ export default function AdminDashboard() {
         </div>
 
         {/* KPI 3: Shopping Orders Count */}
-        <div className="p-4 rounded-2xl bg-blue-50/80 dark:bg-blue-950/40 border-2 border-blue-300 dark:border-blue-700 shadow-sm space-y-1">
+        <div
+          onClick={() => setActiveTab('shopping')}
+          className={`p-4 rounded-2xl border-2 shadow-sm space-y-1 cursor-pointer transition-all hover:scale-[1.03] hover:shadow-md ${
+            activeTab === 'shopping'
+              ? 'bg-blue-100/90 dark:bg-blue-950/80 border-blue-500 ring-2 ring-blue-400/40'
+              : 'bg-blue-50/80 dark:bg-blue-950/40 border-blue-300 dark:border-blue-700'
+          }`}
+        >
           <div className="flex items-center justify-between">
             <span className="text-[10px] text-blue-800 dark:text-blue-300 uppercase font-mono font-bold">
               🛍️ Đơn Mua Sắm
@@ -358,7 +397,14 @@ export default function AdminDashboard() {
         </div>
 
         {/* KPI 4: Shopping Revenue */}
-        <div className="p-4 rounded-2xl bg-emerald-50/80 dark:bg-emerald-950/40 border-2 border-emerald-300 dark:border-emerald-700 shadow-sm space-y-1">
+        <div
+          onClick={() => setActiveTab('shopping')}
+          className={`p-4 rounded-2xl border-2 shadow-sm space-y-1 cursor-pointer transition-all hover:scale-[1.03] hover:shadow-md ${
+            activeTab === 'shopping'
+              ? 'bg-emerald-100/90 dark:bg-emerald-950/80 border-emerald-500 ring-2 ring-emerald-400/40'
+              : 'bg-emerald-50/80 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-700'
+          }`}
+        >
           <div className="flex items-center justify-between">
             <span className="text-[10px] text-emerald-800 dark:text-emerald-300 uppercase font-mono font-bold">
               💵 Doanh thu Bán lẻ
@@ -390,7 +436,14 @@ export default function AdminDashboard() {
         </div>
 
         {/* KPI 6: Users Count */}
-        <div className="p-4 rounded-2xl bg-slate-100 dark:bg-gray-900 border-2 border-slate-300 dark:border-gray-700 shadow-sm space-y-1">
+        <div
+          onClick={() => setActiveTab('users')}
+          className={`p-4 rounded-2xl border-2 shadow-sm space-y-1 cursor-pointer transition-all hover:scale-[1.03] hover:shadow-md ${
+            activeTab === 'users'
+              ? 'bg-slate-200 dark:bg-gray-800 border-purple-500 ring-2 ring-purple-400/40'
+              : 'bg-slate-100 dark:bg-gray-900 border-slate-300 dark:border-gray-700'
+          }`}
+        >
           <div className="flex items-center justify-between">
             <span className="text-[10px] text-slate-700 dark:text-gray-300 uppercase font-mono font-bold">
               👥 Tài khoản
@@ -713,6 +766,88 @@ export default function AdminDashboard() {
       {/* Tab: Overview (Top Products & Revenue Distribution) */}
       {activeTab === 'overview' && (
         <div className="space-y-6">
+          {/* Pending Subscriptions Action Box */}
+          {pendingSubCount > 0 && (
+            <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-amber-500/10 via-purple-500/10 to-pink-500/10 border-2 border-amber-400 dark:border-amber-600 space-y-4 shadow-lg animate-in fade-in">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-10 h-10 rounded-2xl bg-amber-500 text-black flex items-center justify-center font-black shadow-md">
+                    <Crown className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm sm:text-base font-black text-slate-950 dark:text-white uppercase tracking-wider font-heading">
+                      CẦN DUYỆT: {pendingSubCount} ĐƠN ĐĂNG KÝ GÓI HỘI VIÊN
+                    </h3>
+                    <p className="text-xs text-slate-600 dark:text-gray-400 font-medium">
+                      Khách hàng đã chuyển khoản VietQR Napas 247. Vui lòng đối soát và bấm Duyệt để kích hoạt đặc quyền!
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setActiveTab('subscriptions')}
+                  className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-black text-xs transition-all shadow-md self-start cursor-pointer"
+                >
+                  Xem toàn bộ ({subscriptionOrders.length} đơn gói) &rarr;
+                </button>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="border-b border-amber-200 dark:border-gray-800 text-slate-700 dark:text-gray-400 font-mono uppercase text-[10px] font-black">
+                    <tr>
+                      <th className="py-2.5 px-2">Mã đơn</th>
+                      <th className="py-2.5 px-2">Khách hàng</th>
+                      <th className="py-2.5 px-2">Gói hội viên</th>
+                      <th className="py-2.5 px-2">Số tiền</th>
+                      <th className="py-2.5 px-2 text-right">Phê duyệt nhanh</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-amber-100 dark:divide-gray-800">
+                    {subscriptionOrders
+                      .filter((o) => (o.orderStatus || o.status) === 'PENDING')
+                      .map((ord) => {
+                        const subItem = ord.items?.find((it) => it.type === 'subscription' || !it.productId || it.name?.includes('GÓI HỘI VIÊN'));
+                        return (
+                          <tr key={ord.id || ord._id} className="hover:bg-amber-100/40 dark:hover:bg-gray-900/50">
+                            <td className="py-3 px-2 font-mono font-black text-pink-600 dark:text-cyan-400">
+                              #{ord.orderCode}
+                            </td>
+                            <td className="py-3 px-2">
+                              <span className="font-black text-slate-950 dark:text-white block">{ord.customerName || ord.customerInfo?.name}</span>
+                              <span className="text-[11px] text-slate-500 dark:text-gray-400 font-mono block">{ord.customerPhone || ord.customerInfo?.phone}</span>
+                            </td>
+                            <td className="py-3 px-2">
+                              <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-purple-100 dark:bg-purple-950 text-purple-800 dark:text-purple-300 border border-purple-300">
+                                {subItem?.name || subItem?.size || 'GÓI HỘI VIÊN'}
+                              </span>
+                            </td>
+                            <td className="py-3 px-2 font-mono font-black text-slate-900 dark:text-white">
+                              {(ord.finalAmount || ord.totalAmount || subItem?.price || 0).toLocaleString('vi-VN')}đ
+                            </td>
+                            <td className="py-3 px-2 text-right">
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  onClick={() => handleApproveSubscription(ord)}
+                                  className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 text-white font-black text-xs shadow-md flex items-center gap-1 cursor-pointer"
+                                >
+                                  <CheckCircle className="w-3.5 h-3.5" /> Duyệt & Cấp gói
+                                </button>
+                                <button
+                                  onClick={() => handleCancelSubscription(ord)}
+                                  className="px-2.5 py-1.5 rounded-xl bg-rose-100 dark:bg-red-950 hover:bg-rose-200 text-rose-700 dark:text-red-300 font-bold text-xs cursor-pointer"
+                                >
+                                  Hủy
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
           <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-gray-950/80 border-2 border-pink-200 dark:border-gray-800 space-y-4 shadow-md">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-black text-slate-950 dark:text-white uppercase tracking-wider font-heading">

@@ -327,10 +327,18 @@ function formatOrderRecord(order) {
   }
 
   const rawStatus = (doc.orderStatus || doc.status || 'PENDING').toUpperCase();
-  const isSubscriptionOrder = (doc.items || []).some(
-    (it) => it.type === 'subscription' || !it.productId || it.name?.includes('GÓI HỘI VIÊN')
-  );
-  const normalizedOrderType = doc.orderType || (isSubscriptionOrder ? 'MEMBERSHIP' : 'SHOPPING');
+  const isSubscriptionOrder =
+    doc.orderType === 'MEMBERSHIP' ||
+    (doc.items || []).some(
+      (it) =>
+        it.type === 'subscription' ||
+        it.itemType === 'subscription' ||
+        !it.productId ||
+        (it.name && it.name.toUpperCase().includes('HỘI VIÊN')) ||
+        (it.name && it.name.toUpperCase().includes('GÓI')) ||
+        (it.sku && it.sku.includes('SUB'))
+    );
+  const normalizedOrderType = isSubscriptionOrder ? 'MEMBERSHIP' : (doc.orderType || 'SHOPPING');
 
   return {
     ...doc,

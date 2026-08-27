@@ -38,6 +38,15 @@ const orderItemSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    itemType: {
+      type: String,
+      enum: ['product', 'subscription'],
+      default: 'product',
+    },
+    type: {
+      type: String,
+      default: 'product',
+    },
   },
   { _id: false }
 );
