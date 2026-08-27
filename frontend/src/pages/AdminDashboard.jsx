@@ -134,10 +134,13 @@ export default function AdminDashboard() {
   const handleApproveSubscription = async (order) => {
     const oId = order._id || order.id || order.orderCode;
     try {
-      const res = await orderAPI.updateStatus(oId, 'DELIVERED', 'Admin đã duyệt thanh toán VietQR và kích hoạt gói hội viên');
+      const res = await orderAPI.updateStatus(oId, {
+        status: 'DELIVERED',
+        note: 'Admin đã duyệt thanh toán VietQR và kích hoạt gói hội viên',
+      });
       if (res.data.success) {
         setActionNotice({ type: 'success', message: `🎉 Đã duyệt và kích hoạt gói hội viên cho đơn #${order.orderCode}!` });
-        loadAdminData();
+        await loadAdminData();
       }
     } catch (e) {
       setActionNotice({
@@ -152,10 +155,13 @@ export default function AdminDashboard() {
     const oId = order._id || order.id || order.orderCode;
     if (!window.confirm(`Bạn có chắc chắn muốn hủy đơn đăng ký #${order.orderCode} không?`)) return;
     try {
-      const res = await orderAPI.updateStatus(oId, 'CANCELLED', 'Admin hủy đơn do chưa nhận được thanh toán');
+      const res = await orderAPI.updateStatus(oId, {
+        status: 'CANCELLED',
+        note: 'Admin hủy đơn do chưa nhận được thanh toán',
+      });
       if (res.data.success) {
         setActionNotice({ type: 'success', message: `Đã hủy đơn đăng ký #${order.orderCode}` });
-        loadAdminData();
+        await loadAdminData();
       }
     } catch (e) {
       setActionNotice({
@@ -172,7 +178,7 @@ export default function AdminDashboard() {
       const res = await userAPI.updateMembership(userId, { activePackage: 'NONE' });
       if (res.data.success) {
         setActionNotice({ type: 'success', message: `Đã thu hồi gói hội viên của ${userName} thành công!` });
-        loadAdminData();
+        await loadAdminData();
       }
     } catch (e) {
       setActionNotice({
@@ -185,10 +191,13 @@ export default function AdminDashboard() {
   // Handle Admin Update Shopping Order Status
   const handleUpdateShoppingOrderStatus = async (orderId, newStatus) => {
     try {
-      const res = await orderAPI.updateStatus(orderId, newStatus, `Admin cập nhật trạng thái sang ${newStatus}`);
+      const res = await orderAPI.updateStatus(orderId, {
+        status: newStatus,
+        note: `Admin cập nhật trạng thái sang ${newStatus}`,
+      });
       if (res.data.success) {
         setActionNotice({ type: 'success', message: `Đã cập nhật đơn hàng #${orderId} sang "${newStatus}"!` });
-        loadAdminData();
+        await loadAdminData();
       }
     } catch (e) {
       setActionNotice({

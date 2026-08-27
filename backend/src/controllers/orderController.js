@@ -111,7 +111,8 @@ async function getOrderByCode(req, res) {
 async function updateStatus(req, res) {
   try {
     const { id } = req.params;
-    const { status, note } = req.body;
+    const status = (req.body && (req.body.status || req.body.newStatus || req.body.orderStatus)) || (typeof req.body === 'string' ? req.body : null);
+    const note = req.body?.note || req.body?.description || '';
 
     if (!status) {
       return res.status(400).json({ success: false, message: 'Vui lòng cung cấp trạng thái mới' });

@@ -49,7 +49,10 @@ export const orderAPI = {
   getMyOrders: () => api.get('/orders/my-orders'),
   getAll: (params) => api.get('/orders', { params }),
   getTracking: (code) => api.get(`/orders/track/${code}`),
-  updateStatus: (id, data) => api.patch(`/orders/${id}/status`, data),
+  updateStatus: (id, statusOrData, note) => {
+    const payload = typeof statusOrData === 'string' ? { status: statusOrData, note } : statusOrData;
+    return api.patch(`/orders/${id}/status`, payload);
+  },
   confirmDelivery: (id) => api.post(`/orders/${id}/confirm-delivery`),
   getKPIs: () => api.get('/orders/kpi/dashboard'),
 };
