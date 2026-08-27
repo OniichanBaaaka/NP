@@ -18,6 +18,7 @@ import { orderAPI } from '../services/api';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import VietQRModal from '../components/VietQRModal';
+import ConfirmModal from '../components/ConfirmModal';
 
 export default function OrderTracking() {
   const { isDark } = useTheme();
@@ -64,10 +65,14 @@ export default function OrderTracking() {
 
   const [confirming, setConfirming] = useState(false);
   const [confirmSuccess, setConfirmSuccess] = useState('');
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
 
-  const handleConfirmReceived = async () => {
+  const handleConfirmReceived = () => {
     if (!order) return;
-    if (!window.confirm('Bạn xác nhận đã nhận được kiện hàng này đầy đủ và nguyên vẹn?')) return;
+    setIsConfirmModalOpen(true);
+  };
+
+  const handleExecuteConfirm = async () => {
     setConfirming(true);
     setConfirmSuccess('');
     try {
@@ -82,6 +87,7 @@ export default function OrderTracking() {
       alert(e.response?.data?.message || 'Không thể xác nhận nhận hàng');
     } finally {
       setConfirming(false);
+      setIsConfirmModalOpen(false);
     }
   };
 
@@ -569,6 +575,20 @@ export default function OrderTracking() {
           amount={order.totalAmount}
         />
       )}
+
+      {/* Custom Luxury Confirm Modal */}
+      <ConfirmModal
+        isOpen={isConfirmModalOpen}
+        title="Xác nhận đã nhận hàng"
+        message="Bạn xác nhận đã nhận được kiện hàng này đầy đủ, nguyên vẹn và đúng mẫu?"
+        subtext={`Đơn hàng #${order?.orderCode} sẽ được chuyển sang trạng thái ĐÃ GIAO (DELIVERED).`}
+        confirmText="Đã nhận đủ hàng"
+        cancelText="Chưa nhận được"
+        type="delivery"
+        isLoading={confirming}
+        onConfirm={handleExecuteConfirm}
+        onCancel={() => setIsConfirmModalOpen(false)}
+      />
     </div>
   );
 }

@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { orderAPI, userAPI, categoryAPI, faqAPI, aiAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import ConfirmModal from '../components/ConfirmModal';
 
 export default function AdminDashboard() {
   const { user } = useAuth();
@@ -115,21 +116,63 @@ export default function AdminDashboard() {
     }
   };
 
+  // Custom Confirm Modal State
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    subtext: '',
+    confirmText: 'Xác nhận',
+    cancelText: 'Hủy bỏ',
+    type: 'danger',
+    onConfirm: null,
+    isLoading: false,
+  });
+
+  const openConfirmModal = ({ title, message, subtext, confirmText, cancelText, type, onConfirm }) => {
+    setConfirmModal({
+      isOpen: true,
+      title,
+      message,
+      subtext,
+      confirmText: confirmText || 'Xác nhận',
+      cancelText: cancelText || 'Hủy bỏ',
+      type: type || 'danger',
+      isLoading: false,
+      onConfirm: async () => {
+        setConfirmModal((prev) => ({ ...prev, isLoading: true }));
+        try {
+          await onConfirm();
+        } finally {
+          setConfirmModal((prev) => ({ ...prev, isOpen: false, isLoading: false }));
+        }
+      },
+    });
+  };
+
   // Handle User Delete (with protection rule test)
-  const handleDeleteUser = async (userId, userName) => {
-    if (!window.confirm(`Bạn có chắc chắn muốn xóa người dùng "${userName}" không?`)) return;
-    try {
-      const res = await userAPI.delete(userId);
-      if (res.data.success) {
-        setActionNotice({ type: 'success', message: res.data.message });
-        loadAdminData();
-      }
-    } catch (e) {
-      setActionNotice({
-        type: 'error',
-        message: e.response?.data?.message || 'Không thể xóa người dùng',
-      });
-    }
+  const handleDeleteUser = (userId, userName) => {
+    openConfirmModal({
+      title: 'Xóa tài khoản người dùng',
+      message: `Bạn có chắc chắn muốn xóa vĩnh viễn tài khoản "${userName}" khỏi hệ thống không?`,
+      subtext: 'Toàn bộ thông tin tài khoản sẽ bị xóa và không thể khôi phục lại.',
+      type: 'danger',
+      confirmText: 'Đồng ý xóa vĩnh viễn',
+      onConfirm: async () => {
+        try {
+          const res = await userAPI.delete(userId);
+          if (res.data.success) {
+            setActionNotice({ type: 'success', message: res.data.message });
+            await loadAdminData();
+          }
+        } catch (e) {
+          setActionNotice({
+            type: 'error',
+            message: e.response?.data?.message || 'Không thể xóa người dùng',
+          });
+        }
+      },
+    });
   };
 
   // Handle Admin Approve Subscription Order
@@ -153,41 +196,57 @@ export default function AdminDashboard() {
   };
 
   // Handle Admin Cancel Subscription Order
-  const handleCancelSubscription = async (order) => {
+  const handleCancelSubscription = (order) => {
     const oId = order._id || order.id || order.orderCode;
-    if (!window.confirm(`Bạn có chắc chắn muốn hủy đơn đăng ký #${order.orderCode} không?`)) return;
-    try {
-      const res = await orderAPI.updateStatus(oId, {
-        status: 'CANCELLED',
-        note: 'Admin hủy đơn do chưa nhận được thanh toán',
-      });
-      if (res.data.success) {
-        setActionNotice({ type: 'success', message: `Đã hủy đơn đăng ký #${order.orderCode}` });
-        await loadAdminData();
-      }
-    } catch (e) {
-      setActionNotice({
-        type: 'error',
-        message: e.response?.data?.message || 'Không thể hủy đơn đăng ký gói',
-      });
-    }
+    openConfirmModal({
+      title: 'Hủy đơn đăng ký Gói Hội Viên',
+      message: `Bạn có chắc chắn muốn hủy đơn đăng ký #${order.orderCode} của khách hàng ${order.customerName || order.customerInfo?.name}?`,
+      subtext: 'Trạng thái đơn hàng sẽ chuyển sang CANCELLED do khách hàng chưa thanh toán hoặc yêu cầu hủy.',
+      type: 'danger',
+      confirmText: 'Xác nhận hủy đơn',
+      onConfirm: async () => {
+        try {
+          const res = await orderAPI.updateStatus(oId, {
+            status: 'CANCELLED',
+            note: 'Admin hủy đơn do chưa nhận được thanh toán',
+          });
+          if (res.data.success) {
+            setActionNotice({ type: 'success', message: `Đã hủy đơn đăng ký #${order.orderCode}` });
+            await loadAdminData();
+          }
+        } catch (e) {
+          setActionNotice({
+            type: 'error',
+            message: e.response?.data?.message || 'Không thể hủy đơn đăng ký gói',
+          });
+        }
+      },
+    });
   };
 
   // Handle Admin Revoke User Package
-  const handleRevokeUserPackage = async (userId, userName) => {
-    if (!window.confirm(`Bạn có chắc chắn muốn hủy gói hội viên và thu hồi đặc quyền của "${userName}" không?`)) return;
-    try {
-      const res = await userAPI.updateMembership(userId, { activePackage: 'NONE' });
-      if (res.data.success) {
-        setActionNotice({ type: 'success', message: `Đã thu hồi gói hội viên của ${userName} thành công!` });
-        await loadAdminData();
-      }
-    } catch (e) {
-      setActionNotice({
-        type: 'error',
-        message: e.response?.data?.message || 'Không thể thu hồi gói hội viên',
-      });
-    }
+  const handleRevokeUserPackage = (userId, userName) => {
+    openConfirmModal({
+      title: 'Thu hồi Gói Hội Viên',
+      message: `Bạn có chắc chắn muốn hủy gói hội viên và thu hồi đặc quyền của "${userName}" không?`,
+      subtext: 'Khách hàng sẽ trở về hạng tài khoản thông thường và mất toàn bộ chiết khấu giảm giá của gói.',
+      type: 'warning',
+      confirmText: 'Đồng ý thu hồi gói',
+      onConfirm: async () => {
+        try {
+          const res = await userAPI.updateMembership(userId, { activePackage: 'NONE' });
+          if (res.data.success) {
+            setActionNotice({ type: 'success', message: `Đã thu hồi gói hội viên của ${userName} thành công!` });
+            await loadAdminData();
+          }
+        } catch (e) {
+          setActionNotice({
+            type: 'error',
+            message: e.response?.data?.message || 'Không thể thu hồi gói hội viên',
+          });
+        }
+      },
+    });
   };
 
   // Handle Admin Update Shopping Order Status
@@ -1065,6 +1124,20 @@ export default function AdminDashboard() {
           </div>
         </div>
       )}
+
+      {/* Luxury Custom Confirm Modal */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        subtext={confirmModal.subtext}
+        confirmText={confirmModal.confirmText}
+        cancelText={confirmModal.cancelText}
+        type={confirmModal.type}
+        isLoading={confirmModal.isLoading}
+        onConfirm={confirmModal.onConfirm}
+        onCancel={() => setConfirmModal((prev) => ({ ...prev, isOpen: false }))}
+      />
     </div>
   );
 }

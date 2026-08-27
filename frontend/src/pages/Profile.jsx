@@ -38,6 +38,7 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { orderAPI, reviewAPI, faqAPI, userAPI, authAPI } from '../services/api';
 import MembershipBadge from '../components/MembershipBadge';
+import ConfirmModal from '../components/ConfirmModal';
 
 export default function Profile() {
   const { isDark } = useTheme();
@@ -176,25 +177,49 @@ export default function Profile() {
     }
   };
 
-  const handleConfirmDelivery = async (orderId) => {
-    if (!window.confirm('Bạn xác nhận đã nhận được kiện hàng này đầy đủ và nguyên vẹn?')) {
-      return;
-    }
-    setConfirmingOrderId(orderId);
-    setConfirmSuccessMsg('');
-    try {
-      const res = await orderAPI.confirmDelivery(orderId);
-      if (res.data && res.data.success) {
-        setConfirmSuccessMsg('🎉 ' + res.data.message);
-        await loadOrders();
-        if (refreshUserData) await refreshUserData();
-        setTimeout(() => setConfirmSuccessMsg(''), 5000);
-      }
-    } catch (e) {
-      alert(e.response?.data?.message || 'Không thể xác nhận nhận hàng');
-    } finally {
-      setConfirmingOrderId(null);
-    }
+  // Custom Confirm Modal State
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    subtext: '',
+    confirmText: 'Xác nhận',
+    cancelText: 'Hủy bỏ',
+    type: 'delivery',
+    onConfirm: null,
+    isLoading: false,
+  });
+
+  const handleConfirmDelivery = (orderId) => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'Xác nhận đã nhận hàng',
+      message: 'Bạn xác nhận đã nhận được kiện hàng này đầy đủ, nguyên vẹn và đúng mẫu?',
+      subtext: 'Đơn hàng sẽ chuyển sang trạng thái ĐÃ GIAO (DELIVERED) và số tiền sẽ được tính vào tích lũy hạng thành viên của bạn.',
+      confirmText: 'Đã nhận đủ hàng',
+      cancelText: 'Chưa nhận được',
+      type: 'delivery',
+      isLoading: false,
+      onConfirm: async () => {
+        setConfirmModal((prev) => ({ ...prev, isLoading: true }));
+        setConfirmingOrderId(orderId);
+        setConfirmSuccessMsg('');
+        try {
+          const res = await orderAPI.confirmDelivery(orderId);
+          if (res.data && res.data.success) {
+            setConfirmSuccessMsg('🎉 ' + res.data.message);
+            await loadOrders();
+            if (refreshUserData) await refreshUserData();
+            setTimeout(() => setConfirmSuccessMsg(''), 5000);
+          }
+        } catch (e) {
+          alert(e.response?.data?.message || 'Không thể xác nhận nhận hàng');
+        } finally {
+          setConfirmingOrderId(null);
+          setConfirmModal((prev) => ({ ...prev, isOpen: false, isLoading: false }));
+        }
+      },
+    });
   };
 
   const handleCopyVoucher = (code) => {
@@ -1411,6 +1436,20 @@ export default function Profile() {
           </div>
         </div>
       )}
+
+      {/* Custom Luxury Confirm Modal */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        subtext={confirmModal.subtext}
+        confirmText={confirmModal.confirmText}
+        cancelText={confirmModal.cancelText}
+        type={confirmModal.type}
+        isLoading={confirmModal.isLoading}
+        onConfirm={confirmModal.onConfirm}
+        onCancel={() => setConfirmModal((prev) => ({ ...prev, isOpen: false }))}
+      />
     </div>
   );
 }
