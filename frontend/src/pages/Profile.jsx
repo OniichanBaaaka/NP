@@ -33,6 +33,10 @@ import {
   Send,
   LogIn,
   Layers,
+  Crown,
+  CheckCircle,
+  AlertTriangle,
+  Trash2,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
