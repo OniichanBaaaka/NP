@@ -663,7 +663,7 @@ export default function Profile() {
             <div className="space-y-4">
               {filteredOrders.map((order) => {
                 const rawSt = String(order.status || order.orderStatus || 'PENDING').toUpperCase();
-                const isOrdDelivered = rawSt === 'DELIVERED' || rawSt === 'COMPLETED' || isDelivered(order.status) || isDelivered(order.orderStatus);
+                const isOrdDelivered = rawSt === 'DELIVERED' || rawSt === 'COMPLETED' || rawSt === 'SUCCESS';
                 const isOrdShipping = rawSt === 'SHIPPING' || rawSt === 'DELIVERING';
                 const isOrdProcessing = rawSt === 'PROCESSING' || rawSt === 'CONFIRMED';
                 const isOrdPending = rawSt === 'PENDING';
@@ -698,7 +698,7 @@ export default function Profile() {
                           )}
                         </div>
                         <span className="text-[11px] text-slate-500 dark:text-gray-500 font-bold block">
-                          Ngày đặt: {new Date(order.createdAt).toLocaleString('vi-VN')}
+                          Ngày đặt: {order.createdAt ? new Date(order.createdAt).toLocaleString('vi-VN') : 'Vừa xong'}
                         </span>
                       </div>
 
