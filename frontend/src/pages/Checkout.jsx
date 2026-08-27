@@ -59,6 +59,55 @@ export default function Checkout() {
   const phoneRef = useRef(null);
   const addressRef = useRef(null);
 
+  // Guard: User must be logged in to checkout
+  if (!user && !createdOrder) {
+    return (
+      <div className="max-w-xl mx-auto px-4 py-16 text-center space-y-6 animate-in fade-in">
+        <div className="w-20 h-20 rounded-3xl bg-pink-500/10 dark:bg-pink-500/20 border-2 border-pink-400 text-pink-600 dark:text-pink-400 flex items-center justify-center mx-auto shadow-xl">
+          <ShieldCheck className="w-10 h-10" />
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white font-heading tracking-tight">
+            YÊU CẦU ĐĂNG NHẬP ĐẶT HÀNG
+          </h2>
+          <p className="text-xs sm:text-sm text-slate-600 dark:text-gray-300 leading-relaxed max-w-md mx-auto font-medium">
+            Để bảo vệ thông tin đơn hàng, tự động tích lũy chi tiêu thăng hạng thành viên và áp dụng các mã voucher giảm giá độc quyền, vui lòng đăng nhập hoặc tạo tài khoản trước khi thanh toán.
+          </p>
+        </div>
+
+        <div className="p-4 rounded-2xl bg-white dark:bg-gray-900 border border-pink-200 dark:border-gray-800 space-y-3 max-w-md mx-auto text-left shadow-sm">
+          <div className="flex items-center gap-2.5 text-xs text-slate-700 dark:text-gray-300 font-bold">
+            <Sparkles className="w-4 h-4 text-amber-500 flex-shrink-0" />
+            <span>Tự động tích lũy thăng hạng Silver, Gold, Diamond</span>
+          </div>
+          <div className="flex items-center gap-2.5 text-xs text-slate-700 dark:text-gray-300 font-bold">
+            <Truck className="w-4 h-4 text-cyan-500 flex-shrink-0" />
+            <span>Theo dõi tiến độ đơn hàng và tra cứu lịch sử tiện lợi</span>
+          </div>
+          <div className="flex items-center gap-2.5 text-xs text-slate-700 dark:text-gray-300 font-bold">
+            <Gift className="w-4 h-4 text-pink-500 flex-shrink-0" />
+            <span>Kho voucher độc quyền giảm giá kép tới 20%</span>
+          </div>
+        </div>
+
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2 max-w-md mx-auto">
+          <Link
+            to="/login?redirect=/checkout"
+            className="w-full sm:w-auto flex-1 py-3.5 px-6 rounded-2xl bg-gradient-to-r from-pink-500 via-rose-500 to-purple-600 hover:from-pink-400 text-white font-extrabold text-xs shadow-lg shadow-pink-500/25 transition-all text-center flex items-center justify-center gap-2"
+          >
+            Đăng nhập ngay <ArrowRight className="w-4 h-4" />
+          </Link>
+          <Link
+            to="/register?redirect=/checkout"
+            className="w-full sm:w-auto flex-1 py-3.5 px-6 rounded-2xl bg-slate-100 dark:bg-gray-900 hover:bg-slate-200 dark:hover:bg-gray-800 border border-slate-300 dark:border-gray-700 text-slate-800 dark:text-gray-200 font-bold text-xs transition-all text-center"
+          >
+            Tạo tài khoản mới
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   if (cartItems.length === 0 && !createdOrder) {
     return (
       <div className="max-w-xl mx-auto px-4 py-20 text-center space-y-4">
@@ -136,6 +185,12 @@ export default function Checkout() {
   const handleSubmitOrder = async (e) => {
     e.preventDefault();
     setApiError('');
+
+    if (!user) {
+      setApiError('Vui lòng đăng nhập tài khoản để tiến hành đặt hàng & thanh toán.');
+      navigate('/login?redirect=/checkout');
+      return;
+    }
 
     // Validate all required fields
     const nameErr = validateField('name', customerInfo.name);

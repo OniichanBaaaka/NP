@@ -1,6 +1,7 @@
 import React from 'react';
 import { X, Trash2, Plus, Minus, ArrowRight, ShoppingBag } from 'lucide-react';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 
 export default function CartDrawer() {
@@ -12,13 +13,18 @@ export default function CartDrawer() {
     removeFromCart,
     cartTotal,
   } = useCart();
+  const { user } = useAuth();
   const navigate = useNavigate();
 
   if (!isCartOpen) return null;
 
   const handleCheckout = () => {
     setIsCartOpen(false);
-    navigate('/checkout');
+    if (!user) {
+      navigate('/login?redirect=/checkout');
+    } else {
+      navigate('/checkout');
+    }
   };
 
   return (

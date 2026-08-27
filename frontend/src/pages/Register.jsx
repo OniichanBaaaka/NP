@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   User,
   Lock,
@@ -27,6 +27,9 @@ export default function Register() {
     address: '',
     otp: '',
   });
+
+  const [searchParams] = useSearchParams();
+  const redirectParam = searchParams.get('redirect');
 
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
@@ -142,8 +145,8 @@ export default function Register() {
         otp: formData.otp.trim(),
       });
 
-      // Tự động chuyển về trang chủ sau khi đăng ký thành công
-      navigate('/');
+      // Tự động chuyển về trang redirect hoặc trang chủ sau khi đăng ký thành công
+      navigate(redirectParam || '/');
     } catch (err) {
       const msg = err.response?.data?.message || err.message || 'Đăng ký thất bại. Vui lòng kiểm tra lại mã OTP.';
       setError(msg);
@@ -390,7 +393,7 @@ export default function Register() {
           {/* Footer Link */}
           <div className="text-center pt-2 text-xs text-gray-400 border-t border-gray-900">
             Đã có tài khoản?{' '}
-            <Link to="/login" className="text-cyan-400 hover:underline font-bold">
+            <Link to={redirectParam ? `/login?redirect=${encodeURIComponent(redirectParam)}` : '/login'} className="text-cyan-400 hover:underline font-bold">
               Đăng nhập ngay
             </Link>
           </div>

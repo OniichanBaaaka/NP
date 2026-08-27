@@ -15,6 +15,7 @@ import {
 import { productAPI } from '../services/api';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
+import { useAuth } from '../context/AuthContext';
 import ProductCard from '../components/ProductCard';
 
 export default function ProductDetail() {
@@ -28,6 +29,7 @@ export default function ProductDetail() {
   const [loading, setLoading] = useState(true);
 
   const { addToCart, setIsCartOpen } = useCart();
+  const { user } = useAuth();
   const { toggleWishlist, isWishlisted } = useWishlist();
   const navigate = useNavigate();
 
@@ -100,7 +102,11 @@ export default function ProductDetail() {
     if (isOutOfStock) return;
     addToCart(product, quantity, selectedSize);
     setIsCartOpen(false);
-    navigate('/checkout');
+    if (!user) {
+      navigate('/login?redirect=/checkout');
+    } else {
+      navigate('/checkout');
+    }
   };
 
   return (

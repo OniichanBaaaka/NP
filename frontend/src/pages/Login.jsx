@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Shield, Sparkles, User, Lock, Mail, ArrowRight, AlertCircle, Eye, EyeOff, LogIn } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -11,6 +11,9 @@ export default function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const [searchParams] = useSearchParams();
+  const redirectParam = searchParams.get('redirect');
+
   const { login } = useAuth();
   const { isDark } = useTheme();
   const navigate = useNavigate();
@@ -21,7 +24,9 @@ export default function Login() {
     setLoading(true);
     try {
       const data = await login(email, password);
-      if (data.user.role === 'admin') {
+      if (redirectParam) {
+        navigate(redirectParam);
+      } else if (data.user.role === 'admin') {
         navigate('/admin/dashboard');
       } else if (data.user.role === 'employee') {
         navigate('/employee/inventory');
@@ -161,7 +166,7 @@ export default function Login() {
 
           <div className="text-center pt-2 text-slate-600 dark:text-gray-400 text-xs font-semibold">
             Chưa có tài khoản?{' '}
-            <Link to="/register" className="text-pink-600 dark:text-cyan-400 hover:underline font-black">
+            <Link to={redirectParam ? `/register?redirect=${encodeURIComponent(redirectParam)}` : '/register'} className="text-pink-600 dark:text-cyan-400 hover:underline font-black">
               Đăng ký tài khoản mới
             </Link>
           </div>

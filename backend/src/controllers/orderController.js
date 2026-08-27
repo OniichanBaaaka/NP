@@ -4,7 +4,14 @@ const orderService = require('../services/orderService');
 
 async function createOrder(req, res) {
   try {
-    const userId = req.user ? req.user.id : null;
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Vui lòng đăng nhập tài khoản để tiến hành đặt hàng & thanh toán.',
+      });
+    }
+
+    const userId = req.user.id;
     const { customerInfo, items, paymentMethod, voucherCode, discountAmount, note } = req.body;
 
     const order = await orderService.createOrder({

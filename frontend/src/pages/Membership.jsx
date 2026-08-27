@@ -209,6 +209,11 @@ export default function Membership() {
 
   // Khởi tạo đơn hàng thật trong CSDL cho gói đăng ký
   const handleBuyPlan = async (plan) => {
+    if (!user) {
+      showToast('🔒 Vui lòng đăng nhập tài khoản để đăng ký gói hội viên.', 'warning');
+      navigate('/login?redirect=/membership');
+      return;
+    }
     setIsProcessing(true);
     try {
       const orderPayload = {

@@ -6,9 +6,9 @@ const { authenticate, optionalAuth, authorizeRoles } = require('../middlewares/a
 // Public tracking
 router.get('/track/:code', orderController.getOrderByCode);
 
-// Customer checkout (hỗ trợ cả /orders/checkout và /orders)
-router.post('/checkout', optionalAuth, orderController.createOrder);
-router.post('/', optionalAuth, orderController.createOrder);
+// Customer checkout (Bắt buộc đăng nhập để đặt hàng & thanh toán)
+router.post('/checkout', authenticate, orderController.createOrder);
+router.post('/', authenticate, orderController.createOrder);
 
 // Người nhận xác nhận đã nhận hàng
 router.post('/:id/confirm-delivery', optionalAuth, orderController.confirmDelivery);
