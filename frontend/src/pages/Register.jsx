@@ -71,6 +71,15 @@ export default function Register() {
       return;
     }
 
+    if (formData.phone && formData.phone.trim()) {
+      const cleanPhone = formData.phone.trim().replace(/[\s.-]/g, '');
+      const vnPhoneRegex = /(0[3|5|7|8|9])+([0-9]{8})\b/;
+      if (!vnPhoneRegex.test(cleanPhone) || cleanPhone.length !== 10) {
+        setError('Số điện thoại không hợp lệ! Vui lòng nhập số điện thoại Việt Nam gồm 10 chữ số (Ví dụ: 0901234567 hoặc 0387878878).');
+        return;
+      }
+    }
+
     setSendingOtp(true);
     try {
       const res = await authAPI.sendOtp({ email: formData.email.trim() });

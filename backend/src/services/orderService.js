@@ -31,9 +31,20 @@ function normalizeStatus(status) {
  * Tạo đơn hàng mới (Lưu thực tế vào MongoDB xiv_orders)
  */
 async function createOrder({ userId, customerInfo, items, paymentMethod, voucherCode, discountAmount, note }) {
-  if (!customerInfo || !customerInfo.name || !customerInfo.phone) {
-    throw new Error('Thông tin khách hàng không đầy đủ (cần họ tên và số điện thoại)');
+  if (!customerInfo || !customerInfo.name || !customerInfo.name.trim()) {
+    throw new Error('Vui lòng nhập họ và tên người nhận hàng.');
   }
+
+  const phoneClean = (customerInfo.phone || '').trim().replace(/[\s.-]/g, '');
+  if (!phoneClean) {
+    throw new Error('Vui lòng nhập số điện thoại người nhận hàng để nhân viên liên hệ giao hàng.');
+  }
+
+  const vnPhoneRegex = /(0[3|5|7|8|9])+([0-9]{8})\b/;
+  if (!vnPhoneRegex.test(phoneClean) || phoneClean.length !== 10) {
+    throw new Error('Số điện thoại không hợp lệ! Vui lòng nhập số điện thoại Việt Nam gồm 10 chữ số (Ví dụ: 0901234567 hoặc 0387878878).');
+  }
+
   if (!items || !Array.isArray(items) || items.length === 0) {
     throw new Error('Đơn hàng phải có ít nhất một sản phẩm');
   }

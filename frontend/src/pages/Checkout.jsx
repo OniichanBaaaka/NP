@@ -102,11 +102,12 @@ export default function Checkout() {
         err = 'Họ và tên cần ít nhất 2 ký tự';
       }
     } else if (field === 'phone') {
-      const phoneRegex = /(84|0[3|5|7|8|9])+([0-9]{8})\b/;
-      if (!value.trim()) {
-        err = 'Vui lòng nhập số điện thoại liên hệ';
-      } else if (!phoneRegex.test(value.trim().replace(/\s+/g, ''))) {
-        err = 'Số điện thoại không hợp lệ (Ví dụ: 0975745248)';
+      const cleanPhone = value.trim().replace(/[\s.-]/g, '');
+      const phoneRegex = /(0[3|5|7|8|9])+([0-9]{8})\b/;
+      if (!cleanPhone) {
+        err = 'Vui lòng nhập số điện thoại người nhận hàng';
+      } else if (!phoneRegex.test(cleanPhone) || cleanPhone.length !== 10) {
+        err = 'Số điện thoại không hợp lệ! Vui lòng nhập 10 chữ số (Ví dụ: 0901234567 hoặc 0387878878)';
       }
     } else if (field === 'address') {
       if (!value.trim()) {

@@ -96,6 +96,18 @@ async function register(req, res) {
       });
     }
 
+    let cleanPhone = '';
+    if (phone && phone.trim()) {
+      cleanPhone = phone.trim().replace(/[\s.-]/g, '');
+      const vnPhoneRegex = /(0[3|5|7|8|9])+([0-9]{8})\b/;
+      if (!vnPhoneRegex.test(cleanPhone) || cleanPhone.length !== 10) {
+        return res.status(400).json({
+          success: false,
+          message: 'Số điện thoại không hợp lệ! Vui lòng nhập số điện thoại Việt Nam gồm 10 chữ số (Ví dụ: 0901234567 hoặc 0387878878).',
+        });
+      }
+    }
+
     // 3. Tạo tài khoản mới
     const hashedPassword = bcrypt.hashSync(password, 10);
     const newUser = await User.create({
@@ -103,7 +115,7 @@ async function register(req, res) {
       email: cleanEmail,
       password: hashedPassword,
       role: 'customer',
-      phone: phone ? phone.trim() : '',
+      phone: cleanPhone,
       address: address ? address.trim() : '',
       totalSpent: 0,
       activePackage: 'NONE',

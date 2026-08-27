@@ -23,7 +23,21 @@ async function updateMyProfile(req, res) {
     }
 
     if (name) user.name = name.trim();
-    if (phone !== undefined) user.phone = phone.trim();
+    if (phone !== undefined) {
+      const cleanPhone = phone.trim().replace(/[\s.-]/g, '');
+      if (cleanPhone) {
+        const vnPhoneRegex = /(0[3|5|7|8|9])+([0-9]{8})\b/;
+        if (!vnPhoneRegex.test(cleanPhone) || cleanPhone.length !== 10) {
+          return res.status(400).json({
+            success: false,
+            message: 'Số điện thoại không hợp lệ! Vui lòng nhập số điện thoại Việt Nam gồm 10 chữ số (Ví dụ: 0901234567 hoặc 0387878878).',
+          });
+        }
+        user.phone = cleanPhone;
+      } else {
+        user.phone = '';
+      }
+    }
     if (address !== undefined) user.address = address.trim();
     if (avatar !== undefined) user.avatar = avatar.trim();
 

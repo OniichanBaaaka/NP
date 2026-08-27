@@ -241,6 +241,17 @@ export default function Profile() {
     setProfileSaving(true);
     setProfileSuccess('');
     setProfileError('');
+
+    if (profileForm.phone && profileForm.phone.trim()) {
+      const cleanPhone = profileForm.phone.trim().replace(/[\s.-]/g, '');
+      const vnPhoneRegex = /(0[3|5|7|8|9])+([0-9]{8})\b/;
+      if (!vnPhoneRegex.test(cleanPhone) || cleanPhone.length !== 10) {
+        setProfileError('Số điện thoại không hợp lệ! Vui lòng nhập số điện thoại Việt Nam gồm 10 chữ số (Ví dụ: 0901234567 hoặc 0387878878).');
+        setProfileSaving(false);
+        return;
+      }
+    }
+
     try {
       const res = await userAPI.updateMyProfile(profileForm);
       if (res.data && res.data.success) {
