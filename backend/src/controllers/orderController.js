@@ -176,11 +176,41 @@ async function confirmDelivery(req, res) {
       return res.status(404).json({ success: false, message: 'Không tìm thấy đơn hàng' });
     }
 
-    if (order.orderStatus === 'DELIVERED') {
+    const currentStatus = String(order.orderStatus || order.status || '').toUpperCase();
+
+    if (currentStatus === 'DELIVERED') {
       return res.json({
         success: true,
         message: 'Đơn hàng này đã được xác nhận đã nhận trước đó.',
         order: orderService.formatOrderRecord(order),
+      });
+    }
+
+    if (currentStatus === 'PENDING') {
+      return res.status(400).json({
+        success: false,
+        message: 'Đơn hàng đang chờ Admin/Nhân viên xác nhận. Sau khi đơn hàng chuyển sang giai đoạn vận chuyển (SHIPPING), bạn mới có thể xác nhận đã nhận hàng.',
+      });
+    }
+
+    if (currentStatus === 'PROCESSING') {
+      return res.status(400).json({
+        success: false,
+        message: 'Đơn hàng đang trong quá trình đóng gói & chuẩn bị hàng tại kho, chưa bàn giao cho bên vận chuyển.',
+      });
+    }
+
+    if (currentStatus === 'CANCELLED') {
+      return res.status(400).json({
+        success: false,
+        message: 'Đơn hàng này đã bị hủy, không thể xác nhận nhận hàng.',
+      });
+    }
+
+    if (currentStatus !== 'SHIPPING' && currentStatus !== 'DELIVERING') {
+      return res.status(400).json({
+        success: false,
+        message: 'Đơn hàng phải ở giai đoạn đang vận chuyển (SHIPPING) thì bạn mới có thể xác nhận đã nhận được hàng.',
       });
     }
 

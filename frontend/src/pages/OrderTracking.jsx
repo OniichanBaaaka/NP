@@ -108,55 +108,58 @@ export default function OrderTracking() {
   };
 
   const getStatusBadge = (status) => {
-    switch (status) {
-      case 'completed':
+    const s = String(status || '').toUpperCase();
+    switch (s) {
+      case 'DELIVERED':
+      case 'COMPLETED':
         return (
           <span className="px-3.5 py-1.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-400 dark:border-emerald-700 text-xs font-black flex items-center gap-1.5 shadow-sm">
-            <CheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> Hoàn thành / Đã kích hoạt
+            <CheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> Đã giao hàng thành công
           </span>
         );
-      case 'delivering':
+      case 'SHIPPING':
+      case 'DELIVERING':
         return (
-          <span className="px-3.5 py-1.5 rounded-full bg-cyan-100 dark:bg-cyan-950 text-cyan-800 dark:text-cyan-300 border border-cyan-400 dark:border-cyan-700 text-xs font-black flex items-center gap-1.5 shadow-sm">
-            <Truck className="w-4 h-4 text-cyan-600 dark:text-cyan-400" /> Đang giao hàng
+          <span className="px-3.5 py-1.5 rounded-full bg-cyan-100 dark:bg-cyan-950 text-cyan-800 dark:text-cyan-300 border border-cyan-400 dark:border-cyan-700 text-xs font-black flex items-center gap-1.5 shadow-sm animate-pulse">
+            <Truck className="w-4 h-4 text-cyan-600 dark:text-cyan-400" /> Đang vận chuyển giao hàng
           </span>
         );
-      case 'confirmed':
+      case 'PROCESSING':
+      case 'CONFIRMED':
         return (
-          <span className="px-3.5 py-1.5 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300 border border-blue-400 dark:border-blue-700 text-xs font-black flex items-center gap-1.5 shadow-sm">
-            <Package className="w-4 h-4 text-blue-600 dark:text-blue-400" /> Đã xác nhận
+          <span className="px-3.5 py-1.5 rounded-full bg-purple-100 dark:bg-purple-950 text-purple-800 dark:text-purple-300 border border-purple-400 dark:border-purple-700 text-xs font-black flex items-center gap-1.5 shadow-sm">
+            <Package className="w-4 h-4 text-purple-600 dark:text-purple-400" /> Đang đóng gói & chuẩn bị hàng
           </span>
         );
-      case 'cancelled':
+      case 'CANCELLED':
         return (
           <span className="px-3.5 py-1.5 rounded-full bg-rose-100 dark:bg-red-950 text-rose-800 dark:text-red-300 border border-rose-400 dark:border-red-700 text-xs font-black flex items-center gap-1.5 shadow-sm">
-            <XCircle className="w-4 h-4 text-rose-600 dark:text-rose-400" /> Đã hủy
+            <XCircle className="w-4 h-4 text-rose-600 dark:text-rose-400" /> Đã hủy đơn
           </span>
         );
       default:
         return (
           <span className="px-3.5 py-1.5 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-300 border border-amber-400 dark:border-amber-700 text-xs font-black flex items-center gap-1.5 shadow-sm">
-            <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400" /> Chờ Admin / Hệ thống xác nhận
+            <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400" /> Chờ Admin / Nhân viên xác nhận
           </span>
         );
     }
   };
 
   const stages = [
-    { key: 'pending', label: 'Tiếp nhận đơn' },
-    { key: 'confirmed', label: 'Xác nhận thanh toán' },
-    { key: 'delivering', label: 'Đang xử lý / Giao' },
-    { key: 'completed', label: 'Hoàn tất & Kích hoạt' },
+    { key: 'pending', label: '1. Đặt hàng', desc: 'Chờ NV duyệt' },
+    { key: 'processing', label: '2. Đóng gói kho', desc: 'Đang chuẩn bị hàng' },
+    { key: 'shipping', label: '3. Đang vận chuyển', desc: 'Đang giao hàng' },
+    { key: 'delivered', label: '4. Đã nhận hàng', desc: 'Giao thành công' },
   ];
 
   const getStepIndex = (status) => {
-    switch (status) {
-      case 'pending': return 0;
-      case 'confirmed': return 1;
-      case 'delivering': return 2;
-      case 'completed': return 3;
-      default: return -1;
-    }
+    const s = String(status || '').toUpperCase();
+    if (s === 'PENDING') return 0;
+    if (s === 'PROCESSING' || s === 'CONFIRMED') return 1;
+    if (s === 'SHIPPING' || s === 'DELIVERING') return 2;
+    if (s === 'DELIVERED' || s === 'COMPLETED') return 3;
+    return -1;
   };
 
   return (
@@ -272,20 +275,26 @@ export default function OrderTracking() {
                 getStatusBadge(order.orderStatus)
               )}
 
-              {!isSubscriptionOrder &&
-                order.orderStatus !== 'completed' &&
-                order.orderStatus !== 'DELIVERED' &&
-                order.orderStatus !== 'cancelled' &&
-                order.orderStatus !== 'CANCELLED' && (
+              {!isSubscriptionOrder && (
+                (String(order.orderStatus || '').toUpperCase() === 'SHIPPING' || String(order.orderStatus || '').toUpperCase() === 'DELIVERING') ? (
                   <button
                     onClick={handleConfirmReceived}
                     disabled={confirming}
-                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-black text-xs flex items-center gap-1.5 shadow-md shadow-emerald-500/25 transition-all cursor-pointer disabled:opacity-50"
+                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-black text-xs flex items-center gap-1.5 shadow-md shadow-emerald-500/25 transition-all cursor-pointer disabled:opacity-50 animate-pulse"
                   >
                     <CheckCircle className="w-4 h-4" />
                     {confirming ? 'Đang xác nhận...' : 'Đã nhận được hàng'}
                   </button>
-                )}
+                ) : (String(order.orderStatus || '').toUpperCase() === 'PENDING') ? (
+                  <span className="px-3.5 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-300 text-xs font-bold flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-amber-500" /> Chờ nhân viên duyệt đơn
+                  </span>
+                ) : (String(order.orderStatus || '').toUpperCase() === 'PROCESSING' || String(order.orderStatus || '').toUpperCase() === 'CONFIRMED') ? (
+                  <span className="px-3.5 py-1.5 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-300 dark:border-purple-700 text-purple-800 dark:text-purple-300 text-xs font-bold flex items-center gap-1.5">
+                    <Package className="w-3.5 h-3.5 text-purple-500" /> Đang đóng gói & chuẩn bị hàng
+                  </span>
+                ) : null
+              )}
 
               {isSubscriptionOrder && (
                 <Link

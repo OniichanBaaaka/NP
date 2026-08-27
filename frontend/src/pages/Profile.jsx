@@ -662,8 +662,12 @@ export default function Profile() {
           ) : (
             <div className="space-y-4">
               {filteredOrders.map((order) => {
-                const isOrdDelivered = isDelivered(order.status) || isDelivered(order.orderStatus);
-                const isOrdCancelled = String(order.status || order.orderStatus || '').toUpperCase() === 'CANCELLED';
+                const rawSt = String(order.status || order.orderStatus || 'PENDING').toUpperCase();
+                const isOrdDelivered = rawSt === 'DELIVERED' || rawSt === 'COMPLETED' || isDelivered(order.status) || isDelivered(order.orderStatus);
+                const isOrdShipping = rawSt === 'SHIPPING' || rawSt === 'DELIVERING';
+                const isOrdProcessing = rawSt === 'PROCESSING' || rawSt === 'CONFIRMED';
+                const isOrdPending = rawSt === 'PENDING';
+                const isOrdCancelled = rawSt === 'CANCELLED';
                 const isOrderSubscription = order.items?.some(
                   (it) => it.type === 'subscription' || !it.productId || it.name?.includes('GÓI HỘI VIÊN')
                 );
@@ -708,17 +712,29 @@ export default function Profile() {
                           </Link>
                         ) : (
                           <>
-                            {!isOrdDelivered && !isOrdCancelled && (
+                            {isOrdShipping && (
                               <button
                                 onClick={() => handleConfirmDelivery(order._id || order.id || order.orderCode)}
                                 disabled={confirmingOrderId === (order._id || order.id || order.orderCode)}
-                                className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-black text-xs flex items-center gap-1.5 shadow-lg shadow-emerald-500/20 transition-all cursor-pointer disabled:opacity-50"
+                                className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-black text-xs flex items-center gap-1.5 shadow-lg shadow-emerald-500/20 transition-all cursor-pointer disabled:opacity-50 animate-pulse"
                               >
                                 <CheckCircle2 className="w-4 h-4" />
                                 {confirmingOrderId === (order._id || order.id || order.orderCode)
                                   ? 'Đang xác nhận...'
                                   : 'Đã nhận được hàng'}
                               </button>
+                            )}
+
+                            {isOrdPending && (
+                              <span className="px-3 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-300 text-xs font-bold flex items-center gap-1.5">
+                                <Clock className="w-3.5 h-3.5 text-amber-500" /> Chờ nhân viên duyệt
+                              </span>
+                            )}
+
+                            {isOrdProcessing && (
+                              <span className="px-3 py-1.5 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-300 dark:border-purple-700 text-purple-800 dark:text-purple-300 text-xs font-bold flex items-center gap-1.5">
+                                <Package className="w-3.5 h-3.5 text-purple-500" /> Đang đóng gói & chuẩn bị
+                              </span>
                             )}
 
                             <Link
