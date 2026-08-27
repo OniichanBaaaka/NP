@@ -16,6 +16,8 @@ import {
   AlertCircle,
   CheckCircle,
   Crown,
+  Clock,
+  Package,
 } from 'lucide-react';
 import { orderAPI, userAPI, categoryAPI, faqAPI, aiAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -705,10 +707,10 @@ export default function AdminDashboard() {
                           </span>
                         </td>
                         <td className="py-3 px-2 font-mono font-black text-slate-900 dark:text-white">
-                          {(ord.finalAmount || ord.totalAmount || subItem?.price || 0).toLocaleString('vi-VN')}đ
+                          {Number(ord.finalAmount || ord.totalAmount || subItem?.price || 0).toLocaleString('vi-VN')}đ
                         </td>
                         <td className="py-3 px-2 text-[11px] text-slate-500 dark:text-gray-400 font-mono">
-                          {new Date(ord.createdAt).toLocaleString('vi-VN')}
+                          {ord.createdAt ? new Date(ord.createdAt).toLocaleString('vi-VN') : 'Vừa xong'}
                         </td>
                         <td className="py-3 px-2">
                           {isDelivered ? (
